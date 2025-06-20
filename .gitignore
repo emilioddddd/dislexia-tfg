@@ -1,0 +1,3 @@
+#Evita subir las cosas como node_modules y el archivo .env
+node_modules/
+.env
