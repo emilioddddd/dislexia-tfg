@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const Usuario = require('../models/Usuario');
+const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
+
 
 // Simulación de base de datos
 /*
@@ -11,23 +13,42 @@ const usuarios = [
 ];
 */
 // Ruta POST /api/usuarios/login
-router.post('/login', (req, res) => {
+// Login
+router.post('/login', async (req, res) => {
+  try {
     const { email, password } = req.body;
 
-    const usuario = usuarios.find(u => u.email === email && u.password === password);
+    // Buscar al usuario por su email
+    const usuario = await Usuario.findOne({ email });
 
     if (!usuario) {
-        return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
+      return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' });
     }
 
+    // Comparar contraseñas
+    const contraseñaCorrecta = await bcrypt.compare(password, usuario.password);
+
+    if (!contraseñaCorrecta) {
+      return res.status(401).json({ mensaje: 'Correo o contraseña incorrectos' });
+    }
+
+    // Guardar en sesión
+    req.session.usuario = {
+      id: usuario._id,
+      email: usuario.email,
+      username: usuario.username,
+      rol: usuario.rol
+    };
+
+    // Login exitoso: devolver info útil
     res.json({
-        mensaje: 'Inicio de sesión correcto',
-        usuario: {
-            id: usuario.id,
-            email: usuario.email,
-            rol: usuario.rol
-        }
+      mensaje: 'Inicio de sesión correcto',
+      usuario: req.session.usuario
     });
+  } catch (error) {
+    console.error('Error al hacer login:', error);
+    res.status(500).json({ mensaje: 'Error al iniciar sesión' });
+  }
 });
 
 // Registro
@@ -58,5 +79,33 @@ router.post('/registro', async (req, res) => {
         res.status(500).json({ mensaje: 'Error al registrar el usuario' });
     }
 });
+
+// /perfil - solo si hay sesión
+router.get('/perfil', (req, res) => {
+  if (!req.session.usuario) {
+    return res.status(401).json({ mensaje: 'No has iniciado sesión' });
+  }
+
+  res.json({ mensaje: 'Perfil del usuario', usuario: req.session.usuario });
+});
+
+
+// Solo profesional puede acceder
+router.get('/panel-profesional', requiereRol('profesional'), (req, res) => {
+  res.json({ mensaje: 'Bienvenido al panel profesional', usuario: req.session.usuario });
+});
+
+
+// /logout - cerrar sesión
+router.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al cerrar sesión' });
+    res.clearCookie('connect.sid');
+    res.json({ mensaje: 'Sesión cerrada correctamente' });
+  });
+});
+
+
+
 
 module.exports = router;

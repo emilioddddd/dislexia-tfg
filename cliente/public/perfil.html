@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Perfil</title>
+</head>
+
+<body>
+    <h1 id="saludo">Cargando...</h1>
+    <button id="cerrarSesion">Cerrar sesión</button>
+
+    <script>
+        // Verificar si el usuario está logueado
+        async function obtenerPerfil() {
+            const res = await fetch('/api/usuarios/perfil', {
+                credentials: 'include' // para enviar cookies
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                document.getElementById('saludo').textContent = `Bienvenido, ${data.usuario.username}`;
+                if (data.usuario.rol === 'profesional') {
+                    // Mostrar enlace al panel profesional
+                    const link = document.createElement('a');
+                    link.href = '/panel-profesional.html';
+                    link.textContent = 'Ir al panel del profesional';
+                    document.body.appendChild(link);
+                }
+            } else {
+                document.getElementById('saludo').textContent = data.mensaje;
+                document.getElementById('cerrarSesion').style.display = 'none';
+            }
+        }
+
+        // Logout
+        document.getElementById('cerrarSesion').addEventListener('click', async () => {
+            const res = await fetch('/api/usuarios/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+            //alert(data.mensaje);
+            location.reload(); // recargar para volver al estado no logueado
+            window.location.href = '/login.html';
+        });
+
+        obtenerPerfil();
+    </script>
+</body>
+
+</html>

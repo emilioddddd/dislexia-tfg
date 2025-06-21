@@ -36,7 +36,14 @@
       });
 
       const data = await res.json();
-      document.getElementById('mensaje').textContent = data.mensaje;
+        if (res.ok) {
+            // Redirigir al login si el registro fue exitoso
+            window.location.href = '/login.html';
+        } else {
+            // Mostrar mensaje de error
+            document.getElementById('mensaje').textContent = data.mensaje;
+        }
+      //document.getElementById('mensaje').textContent = data.mensaje;
     });
   </script>
 </body>

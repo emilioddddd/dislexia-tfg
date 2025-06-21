@@ -11,6 +11,17 @@ dotenv.config();
 const conectarDB = require('./servidor/config/db');
 conectarDB();
 
+const session = require('express-session');
+
+app.use(session({
+  secret: 'clave-secreta', // ⚠️ cámbiala por algo más seguro en producción
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // true si usas HTTPS
+    maxAge: 1000 * 60 * 60 // 1 hora
+  }
+}));
 
 
 // Middleware para poder recibir JSON

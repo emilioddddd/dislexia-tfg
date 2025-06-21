@@ -6,31 +6,39 @@
 </head>
 <body>
   <h1>Iniciar sesión</h1>
-  <form id="formLogin">
-    <input type="email" id="email" placeholder="Correo" required>
-    <input type="password" id="password" placeholder="Contraseña" required>
-    <button type="submit">Entrar</button>
-  </form>
+<form id="formLogin">
+  <input type="email" id="email" placeholder="Correo" required><br>
+  <input type="password" id="password" placeholder="Contraseña" required><br>
+  <button type="submit">Entrar</button>
+</form>
 
-  <p id="mensaje"></p>
+<p id="mensaje"></p>
 
-  <script>
-    const form = document.getElementById('formLogin');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+<script>
+  const form = document.getElementById('formLogin');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-      const res = await fetch('/api/usuarios/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await res.json();
-      document.getElementById('mensaje').textContent = data.mensaje;
+    const res = await fetch('/api/usuarios/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
     });
-  </script>
+
+    const data = await res.json();
+
+    if (res.ok) {
+        window.location.href = '/perfil.html';
+      //document.getElementById('mensaje').textContent =
+        //`¡Hola, ${data.usuario.username}! Has iniciado sesión como ${data.usuario.rol}`;
+    } else {
+      document.getElementById('mensaje').textContent = data.mensaje;
+    }
+  });
+</script>
+
 </body>
 </html>

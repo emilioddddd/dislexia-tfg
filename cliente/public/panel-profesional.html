@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel del Profesional</title>
+</head>
+<body>
+  <h1 id="bienvenida">Cargando...</h1>
+  <div id="contenidoProfesional" style="display: none;">
+    <h2>Herramientas del profesional</h2>
+    <ul>
+      <li><a href="#">Ver lista de pacientes</a></li>
+      <li><a href="#">Asignar actividades</a></li>
+      <li><a href="#">Revisar progreso</a></li>
+    </ul>
+  </div>
+
+  <button id="cerrarSesion">Cerrar sesión</button>
+
+  <script>
+    async function verificarSesion() {
+      const res = await fetch('/api/usuarios/perfil', {
+        credentials: 'include'
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.usuario.rol === 'profesional') {
+        document.getElementById('bienvenida').textContent = `Bienvenido, Dr. ${data.usuario.username}`;
+        document.getElementById('contenidoProfesional').style.display = 'block';
+      } else {
+        document.getElementById('bienvenida').textContent = 'Acceso denegado';
+        document.getElementById('contenidoProfesional').style.display = 'none';
+      }
+    }
+
+    document.getElementById('cerrarSesion').addEventListener('click', async () => {
+      const res = await fetch('/api/usuarios/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      const data = await res.json();
+      alert(data.mensaje);
+      window.location.href = '/';
+    });
+
+    verificarSesion();
+  </script>
+</body>
+</html>
