@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 
 const pacienteSchema = new mongoose.Schema({
   dni: String,
+  nombre: String,
   usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
   profesional: { type: mongoose.Schema.Types.ObjectId, ref: 'Profesional' }
 });

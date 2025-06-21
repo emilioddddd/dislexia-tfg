@@ -12,7 +12,7 @@ const usuarios = [
   { id: 2, email: 'paciente@ejemplo.com', password: 'abcd', rol: 'paciente' }
 ];
 */
-// Ruta POST /api/usuarios/login
+
 // Login
 router.post('/login', async (req, res) => {
   try {
@@ -80,7 +80,7 @@ router.post('/registro', async (req, res) => {
     }
 });
 
-// /perfil - solo si hay sesión
+// Obtener perfil del usuario
 router.get('/perfil', (req, res) => {
   if (!req.session.usuario) {
     return res.status(401).json({ mensaje: 'No has iniciado sesión' });
@@ -95,8 +95,52 @@ router.get('/panel-profesional', requiereRol('profesional'), (req, res) => {
   res.json({ mensaje: 'Bienvenido al panel profesional', usuario: req.session.usuario });
 });
 
+// Solo profesionales pueden acceder
+router.get('/mis-pacientes', requiereRol('profesional'), async (req, res) => {
+  try {
+    const pacientes = await Usuario.find({ rol: 'paciente', profesional: req.session.usuario.id });
+    res.json({ pacientes });
+  } catch (error) {
+    console.error('Error al obtener pacientes:', error);
+    res.status(500).json({ mensaje: 'Error al obtener la lista de pacientes' });
+  }
+});
 
-// /logout - cerrar sesión
+//Registrar un nuevo paciente (solo profesional)
+router.post('/registrar-paciente', requiereRol('profesional'), async (req, res) => {
+  try {
+    const { email, username, password, dni, nombre } = req.body;
+    const profesionalId = req.session.usuario.id;
+
+    // Verificar que no exista ya un usuario con ese email
+    const existente = await Usuario.findOne({ email });
+    if (existente) {
+      return res.status(400).json({ mensaje: 'Ya existe un usuario con ese correo' });
+    }
+
+    const nuevoPaciente = new Usuario({
+      email,
+      username,
+      password: await bcrypt.hash(password, 10),
+      rol: 'paciente',
+      dni,
+      nombre,
+      profesional: profesionalId
+    });
+
+    await nuevoPaciente.save();
+    res.json({ mensaje: 'Paciente registrado correctamente' });
+  } catch (error) {
+    console.error('Error al registrar paciente:', error);
+    res.status(500).json({ mensaje: 'Error interno al registrar paciente' });
+  }
+});
+
+
+
+
+
+// Cerrar sesión
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ mensaje: 'Error al cerrar sesión' });
