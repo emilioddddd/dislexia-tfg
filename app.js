@@ -3,6 +3,15 @@ const express = require('express');
 const app = express();
 const path = require('path');
 
+const dotenv = require('dotenv');
+dotenv.config();
+
+
+// Importar la conexión a la base de datos
+const conectarDB = require('./servidor/config/db');
+conectarDB();
+
+
 
 // Middleware para poder recibir JSON
 app.use(express.json());
