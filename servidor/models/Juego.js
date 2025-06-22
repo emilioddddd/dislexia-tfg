@@ -1,11 +1,13 @@
-// servidor/models/Juego.js
+// models/Juego.js
 const mongoose = require('mongoose');
 
 const juegoSchema = new mongoose.Schema({
-  nombre: String,
-  tipo: String,
-  dificultad: String,
-  descripcion: String
+  titulo: { type: String, required: true },
+  descripcion: { type: String, required: true },
+  tipo: { type: String, required: true },
+  ruta: { type: String, required: true }
 });
 
 module.exports = mongoose.model('Juego', juegoSchema);
+
+

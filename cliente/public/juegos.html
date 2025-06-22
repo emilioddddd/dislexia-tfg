@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Juegos para Dislexia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .juego {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+    .juego h2 {
+      margin: 0;
+    }
+    .juego p {
+      margin: 5px 0;
+    }
+    .juego a {
+      text-decoration: none;
+      color: #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <h1>Juegos disponibles para la dislexia</h1>
+  <div id="listaJuegos">
+    <p>Cargando juegos...</p>
+  </div>
+
+  <script>
+    async function cargarJuegos() {
+      try {
+        const res = await fetch('/api/juegos');
+        const data = await res.json();
+        const contenedor = document.getElementById('listaJuegos');
+        contenedor.innerHTML = '';
+
+        if (res.ok && Array.isArray(data.juegos)) {
+          if (data.juegos.length === 0) {
+            contenedor.innerHTML = '<p>No hay juegos disponibles aún.</p>';
+            return;
+          }
+
+          data.juegos.forEach(juego => {
+            const div = document.createElement('div');
+            div.className = 'juego';
+
+            const titulo = document.createElement('h2');
+            titulo.textContent = juego.titulo;
+
+            const descripcion = document.createElement('p');
+            descripcion.textContent = juego.descripcion;
+
+            const enlace = document.createElement('a');
+            enlace.href = juego.ruta;
+            enlace.textContent = 'Jugar ahora';
+
+            div.appendChild(titulo);
+            div.appendChild(descripcion);
+            div.appendChild(enlace);
+
+            contenedor.appendChild(div);
+          });
+        } else {
+          contenedor.innerHTML = `<p>${data.mensaje || 'Error al cargar los juegos.'}</p>`;
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('listaJuegos').innerHTML = '<p>Error del servidor</p>';
+      }
+    }
+
+    cargarJuegos();
+  </script>
+</body>
+</html>
