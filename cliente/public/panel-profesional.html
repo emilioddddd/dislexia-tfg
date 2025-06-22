@@ -24,21 +24,18 @@
         <button id="abrirModalCita">Crear nueva cita</button>
 
         <!-- Modal para nueva cita -->
-        <div id="modalCita" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
-         background:white; padding:20px; border:1px solid black; z-index:1000;">
+        <div id="modalCita" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid black; z-index:1000;">
             <h3>Nueva cita</h3>
             <form id="formCita">
                 <label>Paciente:
                     <select name="paciente" required id="selectPaciente"></select>
                 </label><br>
-                <label>Fecha y hora:
-                    <input type="datetime-local" name="fecha" required>
+                <label>Fecha:
+                    <input type="date" name="fechaDia" id="fechaDia" required>
                 </label><br>
-                <!--
-        <label>Motivo:
-          <input type="text" name="motivo" required>
-        </label><br><br>
-    -->
+                <label>Hora:
+                    <select name="hora" id="horaDisponible" required></select>
+                </label><br>
                 <button type="submit">Guardar cita</button>
                 <button type="button" id="cerrarModalCita">Cancelar</button>
             </form>
@@ -47,14 +44,11 @@
 
         <h2>Mis pacientes</h2>
         <ul id="listaPacientes"></ul>
-
-        <!-- Botón para abrir modal -->
         <button id="abrirModalRegistrarPaciente">Registrar nuevo paciente</button>
     </div>
 
     <!-- Modal para registrar paciente -->
-    <div id="modalPaciente" style="display: none; position: fixed; top: 0; left: 0;
-        width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999;">
+    <div id="modalPaciente" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999;">
         <div style="background: white; margin: 10% auto; padding: 20px; width: 300px; border-radius: 8px;">
             <h2>Registrar nuevo paciente</h2>
             <form id="formPaciente">
@@ -78,7 +72,6 @@
             const data = await res.json();
             const lista = document.getElementById('listaPacientes');
             lista.innerHTML = '';
-
             if (res.ok) {
                 data.pacientes.forEach(p => {
                     const li = document.createElement('li');
@@ -91,7 +84,6 @@
         async function verificarSesion() {
             const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
             const data = await res.json();
-
             if (res.ok && data.usuario.rol === 'profesional') {
                 document.getElementById('bienvenida').textContent = `Bienvenido, Dr. ${data.usuario.username}`;
                 document.getElementById('contenidoProfesional').style.display = 'block';
@@ -106,16 +98,45 @@
         async function cargarCalendario() {
             const res = await fetch('/api/citas/mis-citas', { credentials: 'include' });
             const data = await res.json();
-
             const calendarEl = document.getElementById('calendarioCitas');
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
-                events: data.eventos || []
+                events: data.eventos || [],
+                dateClick: function (info) {
+                    const fecha = info.dateStr;
+                    window.open(`/ver-citas-dia.html?fecha=${fecha}`, '_blank');
+                }
             });
-
             calendar.render();
         }
+
+        document.getElementById('fechaDia').addEventListener('change', async (e) => {
+            const fecha = e.target.value;
+            const horaSelect = document.getElementById('horaDisponible');
+            if (!fecha) return;
+
+            const res = await fetch(`/api/citas/horas-disponibles?fecha=${fecha}`, {
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+            horaSelect.innerHTML = '';
+
+            if (res.ok && data.horas.length > 0) {
+                data.horas.forEach(hora => {
+                    const option = document.createElement('option');
+                    option.value = hora;
+                    option.textContent = hora;
+                    horaSelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.disabled = true;
+                option.textContent = 'No hay horas disponibles';
+                horaSelect.appendChild(option);
+            }
+        });
 
         document.getElementById('abrirModalRegistrarPaciente').addEventListener('click', () => {
             document.getElementById('modalPaciente').style.display = 'block';
@@ -130,7 +151,6 @@
         document.getElementById('formPaciente').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
-
             const paciente = {
                 email: form.email.value,
                 username: form.username.value,
@@ -138,17 +158,14 @@
                 dni: form.dni.value,
                 nombre: form.nombre.value
             };
-
             const res = await fetch('/api/usuarios/registrar-paciente', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify(paciente)
             });
-
             const data = await res.json();
             const mensaje = document.getElementById('mensajePaciente');
-
             if (res.ok) {
                 mensaje.textContent = 'Paciente registrado correctamente.';
                 form.reset();
@@ -163,14 +180,12 @@
             }
         });
 
-        // Modal de nueva cita
         document.getElementById('abrirModalCita').addEventListener('click', async () => {
             document.getElementById('modalCita').style.display = 'block';
             const res = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
             const data = await res.json();
             const select = document.getElementById('selectPaciente');
             select.innerHTML = '';
-
             if (res.ok) {
                 data.pacientes.forEach(p => {
                     const option = document.createElement('option');
@@ -190,29 +205,23 @@
         document.getElementById('formCita').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
-
+            const fechaCompleta = `${form.fechaDia.value}T${form.hora.value}`;
             const cita = {
                 paciente: form.paciente.value,
-                fecha: form.fecha.value,
-                //motivo: form.motivo.value
+                fecha: fechaCompleta
             };
-
-
             const res = await fetch('/api/citas/nueva', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify(cita)
             });
-
             const data = await res.json();
             const mensaje = document.getElementById('mensajeCita');
-
             if (res.ok) {
                 mensaje.textContent = 'Cita creada correctamente.';
                 mensaje.style.color = 'green';
                 form.reset();
-
                 setTimeout(() => {
                     document.getElementById('modalCita').style.display = 'none';
                     mensaje.textContent = '';

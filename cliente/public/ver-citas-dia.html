@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Citas del Día</title>
+</head>
+<body>
+  <h1>Citas del día seleccionado</h1>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Paciente</th>
+      </tr>
+    </thead>
+    <tbody id="tablaHorarios">
+      <tr><td colspan="2">Cargando...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function cargarHorarios() {
+      const params = new URLSearchParams(window.location.search);
+      const fecha = params.get('fecha');
+      if (!fecha) return;
+
+      try {
+        const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
+        const data = await res.json();
+        const cuerpo = document.getElementById('tablaHorarios');
+        cuerpo.innerHTML = '';
+
+        if (res.ok && Array.isArray(data.horarios)) {
+          if (data.horarios.length === 0) {
+            cuerpo.innerHTML = '<tr><td colspan="2">No hay horarios para este día.</td></tr>';
+            return;
+          }
+
+          data.horarios.forEach(h => {
+            const fila = document.createElement('tr');
+            const hora = document.createElement('td');
+            hora.textContent = h.hora;
+            const paciente = document.createElement('td');
+            paciente.textContent = h.paciente || '-';
+            fila.appendChild(hora);
+            fila.appendChild(paciente);
+            cuerpo.appendChild(fila);
+          });
+        } else {
+          cuerpo.innerHTML = `<tr><td colspan="2">${data.mensaje || 'Error al cargar horarios'}</td></tr>`;
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('tablaHorarios').innerHTML = '<tr><td colspan="2">Error del servidor</td></tr>';
+      }
+    }
+
+    cargarHorarios();
+  </script>
+</body>
+</html>
