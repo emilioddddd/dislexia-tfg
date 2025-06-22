@@ -1,4 +1,3 @@
-// servidor/middleware/autenticacion.js
 function requiereSesion(req, res, next) {
   if (!req.session.usuario) {
     return res.status(401).json({ mensaje: 'No has iniciado sesión' });

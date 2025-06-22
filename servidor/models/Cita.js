@@ -1,11 +1,20 @@
-// servidor/models/Cita.js
 const mongoose = require('mongoose');
 
 const citaSchema = new mongoose.Schema({
-  fecha: String,
-  hora: String,
-  paciente: { type: mongoose.Schema.Types.ObjectId, ref: 'Paciente' },
-  profesional: { type: mongoose.Schema.Types.ObjectId, ref: 'Profesional' }
+  paciente: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Usuario',
+    required: true
+  },
+  profesional: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Usuario',
+    required: true
+  },
+  fecha: {
+    type: Date,
+    required: true
+  }
 });
 
 module.exports = mongoose.model('Cita', citaSchema);

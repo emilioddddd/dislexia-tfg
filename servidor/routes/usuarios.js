@@ -89,8 +89,8 @@ router.get('/perfil', (req, res) => {
   res.json({ mensaje: 'Perfil del usuario', usuario: req.session.usuario });
 });
 
-
-// Solo profesional puede acceder
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Solo profesional 
 router.get('/panel-profesional', requiereRol('profesional'), (req, res) => {
   res.json({ mensaje: 'Bienvenido al panel profesional', usuario: req.session.usuario });
 });
@@ -135,7 +135,7 @@ router.post('/registrar-paciente', requiereRol('profesional'), async (req, res) 
     res.status(500).json({ mensaje: 'Error interno al registrar paciente' });
   }
 });
-
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 
