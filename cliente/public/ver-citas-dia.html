@@ -1,118 +1,185 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Citas del Día</title>
+    <meta charset="UTF-8">
+    <title>Citas del Día</title>
 </head>
+
 <body>
-  <h1 id="tituloFecha">Citas del día seleccionado</h1>
+    <h1 id="tituloFecha">Citas del día seleccionado</h1>
+    <h1 id="fechaSeleccionada">Día seleccionado</h1>
 
 
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Hora</th>
-        <th>Paciente</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="tablaHorarios">
-      <tr><td colspan="3">Cargando...</td></tr>
-    </tbody>
-  </table>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th>Paciente</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tablaHorarios">
+            <tr>
+                <td colspan="3">Cargando...</td>
+            </tr>
+        </tbody>
+    </table>
 
-  <h2>Pacientes con cita</h2>
-  <ul id="listaPacientes"></ul>
+    <h2>Pacientes con cita</h2>
+    <ul id="listaPacientes"></ul>
 
-  <script>
-    async function cargarHorarios() {
-      const params = new URLSearchParams(window.location.search);
-      const fecha = params.get('fecha');
-      if (!fecha) return;
+    <script>
+        async function cargarHorarios() {
+            const params = new URLSearchParams(window.location.search);
+            const fecha = params.get('fecha');
+            if (!fecha) return;
 
-      // Mostrar la fecha seleccionada en el título
-      const fechaObj = new Date(fecha);
-      const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('tituloFecha').textContent = `Citas para el ${fechaObj.toLocaleDateString('es-ES', opciones)}`;
+            const fechaObj = new Date(fecha);
+            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const fechaFormateada = new Intl.DateTimeFormat('es-ES', opciones).format(fechaObj);
+            
+            document.getElementById('fechaSeleccionada').textContent = `${fechaFormateada}`;
 
-      try {
-        const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
-        const data = await res.json();
-        const cuerpo = document.getElementById('tablaHorarios');
-        const listaPacientes = document.getElementById('listaPacientes');
-        cuerpo.innerHTML = '';
-        listaPacientes.innerHTML = '';
+            try {
+                const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
+                const data = await res.json();
+                const cuerpo = document.getElementById('tablaHorarios');
+                const listaPacientes = document.getElementById('listaPacientes');
+                cuerpo.innerHTML = '';
+                listaPacientes.innerHTML = '';
 
-        const pacientesUnicos = new Set();
+                const pacientesUnicos = new Set();
 
-        if (res.ok && Array.isArray(data.horarios)) {
-          if (data.horarios.length === 0) {
-            cuerpo.innerHTML = '<tr><td colspan="3">No hay horarios para este día.</td></tr>';
-            return;
-          }
+                if (res.ok && Array.isArray(data.horarios)) {
+                    if (data.horarios.length === 0) {
+                        cuerpo.innerHTML = '<tr><td colspan="3">No hay horarios para este día.</td></tr>';
+                        return;
+                    }
 
-          data.horarios.forEach(h => {
-            const fila = document.createElement('tr');
+                    for (const h of data.horarios) {
+                        const fila = document.createElement('tr');
 
-            const hora = document.createElement('td');
-            hora.textContent = h.hora;
-            fila.appendChild(hora);
+                        const tdHora = document.createElement('td');
+                        tdHora.textContent = h.hora;
+                        fila.appendChild(tdHora);
 
-            const paciente = document.createElement('td');
-            paciente.textContent = h.paciente || '-';
-            fila.appendChild(paciente);
+                        const tdPaciente = document.createElement('td');
+                        tdPaciente.textContent = h.paciente || '-';
+                        fila.appendChild(tdPaciente);
 
-            const acciones = document.createElement('td');
-            if (h._id && h.paciente) {
-              const btnEliminar = document.createElement('button');
-              btnEliminar.textContent = 'Eliminar';
-              btnEliminar.onclick = async () => {
-                if (confirm(`¿Eliminar cita de ${h.paciente} a las ${h.hora}?`)) {
-                  const resp = await fetch(`/api/citas/${h._id}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                  });
-                  if (resp.ok) {
-                    cargarHorarios(); // Recargar después de eliminar
-                  } else {
-                    alert('Error al eliminar la cita');
-                  }
+                        const tdAcciones = document.createElement('td');
+
+                        if (h._id) {
+                            const btnEliminar = document.createElement('button');
+                            btnEliminar.textContent = 'Eliminar';
+                            btnEliminar.onclick = async () => {
+                                if (confirm(`¿Eliminar cita de ${h.paciente} a las ${h.hora}?`)) {
+                                    const resp = await fetch(`/api/citas/${h._id}`, {
+                                        method: 'DELETE',
+                                        credentials: 'include'
+                                    });
+                                    if (resp.ok) {
+                                        cargarHorarios();
+                                    } else {
+                                        alert('Error al eliminar la cita');
+                                    }
+                                }
+                            };
+                            tdAcciones.appendChild(btnEliminar);
+                            pacientesUnicos.add(h.paciente);
+                        } else {
+                            const btnAgregar = document.createElement('button');
+                            btnAgregar.textContent = 'Añadir';
+                            btnAgregar.onclick = () => mostrarFormularioCrearCita(h.hora, fecha);
+                            tdAcciones.appendChild(btnAgregar);
+                        }
+
+                        fila.appendChild(tdAcciones);
+                        cuerpo.appendChild(fila);
+                    }
+
+                    pacientesUnicos.forEach(nombre => {
+                        const li = document.createElement('li');
+                        li.textContent = nombre;
+                        listaPacientes.appendChild(li);
+                    });
+                } else {
+                    cuerpo.innerHTML = `<tr><td colspan="3">${data.mensaje || 'Error al cargar horarios'}</td></tr>`;
                 }
-              };
-              acciones.appendChild(btnEliminar);
-            } else {
-              acciones.textContent = '-';
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tablaHorarios').innerHTML = '<tr><td colspan="3">Error del servidor</td></tr>';
             }
-            fila.appendChild(acciones);
-
-            cuerpo.appendChild(fila);
-
-            if (h.paciente) pacientesUnicos.add(h.paciente);
-          });
-
-          // Mostrar lista de pacientes únicos
-          if (pacientesUnicos.size === 0) {
-            const li = document.createElement('li');
-            li.textContent = 'Sin pacientes con cita';
-            listaPacientes.appendChild(li);
-          } else {
-            pacientesUnicos.forEach(nombre => {
-              const li = document.createElement('li');
-              li.textContent = nombre;
-              listaPacientes.appendChild(li);
-            });
-          }
-
-        } else {
-          cuerpo.innerHTML = `<tr><td colspan="3">${data.mensaje || 'Error al cargar horarios'}</td></tr>`;
         }
-      } catch (err) {
-        console.error(err);
-        document.getElementById('tablaHorarios').innerHTML = '<tr><td colspan="3">Error del servidor</td></tr>';
-      }
-    }
 
-    cargarHorarios();
-  </script>
+        async function mostrarFormularioCrearCita(hora, fecha) {
+            const pacientesRes = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
+            const pacientesData = await pacientesRes.json();
+            if (!pacientesRes.ok || !pacientesData.pacientes) {
+                alert('Error al obtener pacientes');
+                return;
+            }
+
+            const select = document.createElement('select');
+            pacientesData.pacientes.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p._id;
+                option.textContent = p.nombre;
+                select.appendChild(option);
+            });
+
+            const form = document.createElement('form');
+            form.appendChild(document.createTextNode(`Asignar paciente a ${hora}: `));
+            form.appendChild(select);
+
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'submit';
+            submitBtn.textContent = 'Guardar';
+            form.appendChild(submitBtn);
+
+            const cancelarBtn = document.createElement('button');
+            cancelarBtn.type = 'button';
+            cancelarBtn.textContent = 'Cancelar';
+            cancelarBtn.onclick = () => {
+                document.body.removeChild(modal);
+            };
+            form.appendChild(cancelarBtn);
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const fechaCompleta = `${fecha}T${hora}:00`;
+                const resp = await fetch('/api/citas/nueva', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ paciente: select.value, fecha: fechaCompleta })
+                });
+                if (resp.ok) {
+                    document.body.removeChild(modal);
+                    cargarHorarios();
+                } else {
+                    alert('No se pudo crear la cita.');
+                }
+            };
+
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '20%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translateX(-50%)';
+            modal.style.backgroundColor = 'white';
+            modal.style.padding = '20px';
+            modal.style.border = '1px solid black';
+            modal.style.zIndex = 9999;
+            modal.appendChild(form);
+
+            document.body.appendChild(modal);
+        }
+
+        cargarHorarios();
+    </script>
+
 </body>
+
 </html>
