@@ -5,18 +5,24 @@
   <title>Citas del Día</title>
 </head>
 <body>
-  <h1>Citas del día seleccionado</h1>
+  <h1 id="tituloFecha">Citas del día seleccionado</h1>
+
+
   <table border="1">
     <thead>
       <tr>
         <th>Hora</th>
         <th>Paciente</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody id="tablaHorarios">
-      <tr><td colspan="2">Cargando...</td></tr>
+      <tr><td colspan="3">Cargando...</td></tr>
     </tbody>
   </table>
+
+  <h2>Pacientes con cita</h2>
+  <ul id="listaPacientes"></ul>
 
   <script>
     async function cargarHorarios() {
@@ -24,34 +30,85 @@
       const fecha = params.get('fecha');
       if (!fecha) return;
 
+      // Mostrar la fecha seleccionada en el título
+      const fechaObj = new Date(fecha);
+      const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('tituloFecha').textContent = `Citas para el ${fechaObj.toLocaleDateString('es-ES', opciones)}`;
+
       try {
         const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
         const data = await res.json();
         const cuerpo = document.getElementById('tablaHorarios');
+        const listaPacientes = document.getElementById('listaPacientes');
         cuerpo.innerHTML = '';
+        listaPacientes.innerHTML = '';
+
+        const pacientesUnicos = new Set();
 
         if (res.ok && Array.isArray(data.horarios)) {
           if (data.horarios.length === 0) {
-            cuerpo.innerHTML = '<tr><td colspan="2">No hay horarios para este día.</td></tr>';
+            cuerpo.innerHTML = '<tr><td colspan="3">No hay horarios para este día.</td></tr>';
             return;
           }
 
           data.horarios.forEach(h => {
             const fila = document.createElement('tr');
+
             const hora = document.createElement('td');
             hora.textContent = h.hora;
+            fila.appendChild(hora);
+
             const paciente = document.createElement('td');
             paciente.textContent = h.paciente || '-';
-            fila.appendChild(hora);
             fila.appendChild(paciente);
+
+            const acciones = document.createElement('td');
+            if (h._id && h.paciente) {
+              const btnEliminar = document.createElement('button');
+              btnEliminar.textContent = 'Eliminar';
+              btnEliminar.onclick = async () => {
+                if (confirm(`¿Eliminar cita de ${h.paciente} a las ${h.hora}?`)) {
+                  const resp = await fetch(`/api/citas/${h._id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                  });
+                  if (resp.ok) {
+                    cargarHorarios(); // Recargar después de eliminar
+                  } else {
+                    alert('Error al eliminar la cita');
+                  }
+                }
+              };
+              acciones.appendChild(btnEliminar);
+            } else {
+              acciones.textContent = '-';
+            }
+            fila.appendChild(acciones);
+
             cuerpo.appendChild(fila);
+
+            if (h.paciente) pacientesUnicos.add(h.paciente);
           });
+
+          // Mostrar lista de pacientes únicos
+          if (pacientesUnicos.size === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'Sin pacientes con cita';
+            listaPacientes.appendChild(li);
+          } else {
+            pacientesUnicos.forEach(nombre => {
+              const li = document.createElement('li');
+              li.textContent = nombre;
+              listaPacientes.appendChild(li);
+            });
+          }
+
         } else {
-          cuerpo.innerHTML = `<tr><td colspan="2">${data.mensaje || 'Error al cargar horarios'}</td></tr>`;
+          cuerpo.innerHTML = `<tr><td colspan="3">${data.mensaje || 'Error al cargar horarios'}</td></tr>`;
         }
       } catch (err) {
         console.error(err);
-        document.getElementById('tablaHorarios').innerHTML = '<tr><td colspan="2">Error del servidor</td></tr>';
+        document.getElementById('tablaHorarios').innerHTML = '<tr><td colspan="3">Error del servidor</td></tr>';
       }
     }
 
