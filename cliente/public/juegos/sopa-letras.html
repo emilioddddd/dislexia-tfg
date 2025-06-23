@@ -1,0 +1,122 @@
+<!-- sopa-letras.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Sopa de Letras</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #sopa {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-gap: 5px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .celda {
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      background: white;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .seleccionada {
+      background-color: #add8e6;
+    }
+
+    #palabras {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .encontrada {
+      text-decoration: line-through;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sopa de Letras</h1>
+  <div id="sopa"></div>
+  <h2>Palabras a encontrar</h2>
+  <ul id="palabras"></ul>
+  <p id="mensaje"></p>
+  <a href="/juegos.html">← Volver a Juegos</a>
+
+  <script>
+    const palabras = ['DISLEXIA', 'LEER', 'PALABRA', 'ESCUCHAR', 'DIFICULTAD'];
+    const sopa = document.getElementById('sopa');
+    const lista = document.getElementById('palabras');
+    const mensaje = document.getElementById('mensaje');
+
+    let grid = Array(10).fill(null).map(() => Array(10).fill(''));
+
+    function colocarPalabra(palabra) {
+      const fila = Math.floor(Math.random() * 10);
+      const maxCol = 10 - palabra.length;
+      const col = Math.floor(Math.random() * (maxCol + 1));
+
+      for (let i = 0; i < palabra.length; i++) {
+        grid[fila][col + i] = palabra[i];
+      }
+    }
+
+    function rellenarGrid() {
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          if (!grid[i][j]) {
+            grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+          }
+        }
+      }
+    }
+
+    function renderizarSopa() {
+      sopa.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          const celda = document.createElement('div');
+          celda.className = 'celda';
+          celda.textContent = grid[i][j];
+          sopa.appendChild(celda);
+        }
+      }
+    }
+
+    function renderizarLista() {
+      lista.innerHTML = '';
+      palabras.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p;
+        li.dataset.palabra = p;
+        lista.appendChild(li);
+      });
+    }
+
+    function marcarEncontrada(palabra) {
+      const li = [...lista.children].find(el => el.dataset.palabra === palabra);
+      if (li) {
+        li.classList.add('encontrada');
+      }
+      if ([...lista.children].every(el => el.classList.contains('encontrada'))) {
+        mensaje.textContent = '¡Felicidades! Has encontrado todas las palabras.';
+      }
+    }
+
+    palabras.forEach(colocarPalabra);
+    rellenarGrid();
+    renderizarSopa();
+    renderizarLista();
+  </script>
+</body>
+</html>

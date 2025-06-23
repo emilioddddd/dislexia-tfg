@@ -7,32 +7,72 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
+      background-color: #f4f4f4;
     }
+
     h1 {
       color: #333;
+      text-align: center;
     }
+
     .juego {
-      border: 1px solid #ccc;
+      background-color: #fff;
+      border: 1px solid #ddd;
       padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 5px;
+      margin: 10px auto;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+
     .juego h2 {
       margin: 0;
+      color: #222;
     }
+
     .juego p {
-      margin: 5px 0;
+      color: #555;
     }
+
     .juego a {
+      display: inline-block;
+      margin-top: 10px;
       text-decoration: none;
-      color: #007BFF;
+      color: #fff;
+      background-color: #007BFF;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+
+    #volver {
+      display: inline-block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #6c757d;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    #volver:hover {
+      background-color: #5a6268;
+    }
+
+    #contenedor {
+      max-width: 800px;
+      margin: 0 auto;
     }
   </style>
 </head>
 <body>
-  <h1>Juegos disponibles para la dislexia</h1>
-  <div id="listaJuegos">
-    <p>Cargando juegos...</p>
+  <div id="contenedor">
+    <h1>Juegos disponibles para la dislexia</h1>
+    <div id="listaJuegos">
+      <p>Cargando juegos...</p>
+    </div>
+
+    <a id="volver" href="perfil.html">← Volver al inicio</a>
   </div>
 
   <script>

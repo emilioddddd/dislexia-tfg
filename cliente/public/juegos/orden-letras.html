@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ordena las Letras</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #palabra-deshordenada {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        #letras-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .letra {
+            padding: 10px 15px;
+            font-size: 1.5em;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: move;
+            background: #f0f0f0;
+            user-select: none;
+        }
+
+        #mensaje {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Ordena las Letras</h1>
+    <div id="palabra-deshordenada">?</div>
+    <div id="letras-container"></div>
+    <button onclick="verificarOrden()">Verificar</button>
+    <p id="mensaje"></p>
+
+    <script>
+        const palabras = ['lenguaje', 'pantalla', 'dislexia', 'orden', 'visual'];
+        let palabraActual = '';
+        let letrasOriginales = [];
+        let intentos = 0;
+        let tiempoInicio = null;
+
+        function iniciarJuego() {
+            palabraActual = palabras[Math.floor(Math.random() * palabras.length)];
+            letrasOriginales = palabraActual.split('');
+            const letrasDesordenadas = [...letrasOriginales].sort(() => Math.random() - 0.5);
+
+            document.getElementById('palabra-deshordenada').textContent = 'Ordena:';
+            const contenedor = document.getElementById('letras-container');
+            contenedor.innerHTML = '';
+
+            letrasDesordenadas.forEach((letra, i) => {
+                const span = document.createElement('span');
+                span.textContent = letra;
+                span.className = 'letra';
+                span.id = 'letra-' + i;
+                span.draggable = true;
+
+                span.ondragstart = (e) => e.dataTransfer.setData('text/plain', e.target.id);
+                span.ondragover = (e) => e.preventDefault();
+                span.ondrop = (e) => {
+                    e.preventDefault();
+                    const arrastradaId = e.dataTransfer.getData('text/plain');
+                    const arrastrada = document.getElementById(arrastradaId);
+                    const soltada = e.target;
+                    if (arrastrada !== soltada) {
+                        const temp = arrastrada.textContent;
+                        arrastrada.textContent = soltada.textContent;
+                        soltada.textContent = temp;
+                    }
+                };
+
+                contenedor.appendChild(span);
+            });
+
+            intentos = 0;
+            tiempoInicio = new Date();
+            document.getElementById('mensaje').textContent = '';
+        }
+
+        function verificarOrden() {
+            intentos++;
+            const letras = Array.from(document.getElementById('letras-container').children);
+            const palabraFormada = letras.map(span => span.textContent).join('');
+            const mensaje = document.getElementById('mensaje');
+
+            if (palabraFormada === palabraActual) {
+                const tiempoFin = new Date();
+                const duracionSegundos = Math.floor((tiempoFin - tiempoInicio) / 1000);
+
+                mensaje.textContent = `¡Correcto! Intentos: ${intentos}, Tiempo: ${duracionSegundos} segundos`;
+                mensaje.style.color = 'green';
+
+                const resultado = {
+                    juegoTipo: 'orden-letras', // ⚠️ este nombre debe coincidir con el campo `tipo` del juego en la base de datos
+                    datos: {
+                        palabra: palabraActual,
+                        intentos,
+                        duracionSegundos,
+                        acierto: true,
+                        fecha: new Date().toISOString()
+                    }
+                };
+
+
+                // Enviar al backend
+                fetch('/api/resultados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        juegoTipo: 'orden-letras',
+                        datos: {
+                            palabra: palabraActual,
+                            intentos,
+                            duracionSegundos,
+                            acierto: true,
+                            fecha: new Date().toISOString()
+                        }
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => console.log('Resultado guardado:', data))
+                    .catch(err => console.error('Error al guardar resultado:', err));
+
+            } else {
+                mensaje.textContent = `Intenta de nuevo. Intentos: ${intentos}`;
+                mensaje.style.color = 'red';
+            }
+        }
+
+        iniciarJuego();
+    </script>
+</body>
+
+</html>

@@ -1,11 +1,11 @@
-// servidor/models/Resultado.js
+// models/Resultado.js
 const mongoose = require('mongoose');
 
 const resultadoSchema = new mongoose.Schema({
-  fecha_resultado: String,
-  completado: Boolean,
-  juego: { type: mongoose.Schema.Types.ObjectId, ref: 'Juego' },
-  paciente: { type: mongoose.Schema.Types.ObjectId, ref: 'Paciente' }
+  paciente: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+  juego: { type: mongoose.Schema.Types.ObjectId, ref: 'Juego', required: true },
+  datos: { type: mongoose.Schema.Types.Mixed, required: true },  // permite cualquier estructura de datos
+  fecha: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Resultado', resultadoSchema);

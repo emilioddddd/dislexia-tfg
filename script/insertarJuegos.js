@@ -23,7 +23,13 @@ const juegos = [
     descripcion: 'Relaciona pares de palabras visualmente parecidas.',
     tipo: 'memoria',
     ruta: '/juegos/memoria.html'
-  }
+  },
+  {
+    titulo: 'Ordenar las letras',
+    descripcion: 'Ordena las letras de palabras relacionadas con la dislexia.',
+    tipo: 'orden-letras',
+    ruta: '/juegos/orden-letras.html'
+  },
 ];
 
 Juego.insertMany(juegos)

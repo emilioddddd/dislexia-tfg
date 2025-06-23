@@ -34,9 +34,12 @@ app.use(express.static(path.join(__dirname, 'cliente/public')));
 const rutasUsuarios = require('./servidor/routes/usuarios');
 const rutasCitas = require('./servidor/routes/citas');
 const rutasJuegos = require('./servidor/routes/juegos');
+const rutasResultados = require('./servidor/routes/resultados');
 app.use('/api/usuarios', rutasUsuarios);
 app.use('/api/citas', rutasCitas);
 app.use('/api/juegos', rutasJuegos);
+app.use('/api/resultados', rutasResultados);
+
 
 
 
