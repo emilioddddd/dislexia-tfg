@@ -1,6 +1,6 @@
-<!-- sopa-letras.html -->
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>Sopa de Letras</title>
@@ -28,10 +28,19 @@
       border: 1px solid #ccc;
       cursor: pointer;
       font-weight: bold;
+      user-select: none;
     }
 
-    .seleccionada {
-      background-color: #add8e6;
+    .seleccionando {
+      background-color: #87cefa !important;
+      /* azul claro */
+    }
+
+    .encontrada {
+      background-color: #32cd32 !important;
+      /* verde */
+      color: black !important;
+      text-decoration: none !important;
     }
 
     #palabras {
@@ -39,13 +48,16 @@
       margin: 0 auto;
     }
 
-    .encontrada {
-      text-decoration: line-through;
-      color: green;
+    #mensaje {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.1em;
     }
   </style>
 </head>
+
 <body>
+
   <h1>Sopa de Letras</h1>
   <div id="sopa"></div>
   <h2>Palabras a encontrar</h2>
@@ -58,22 +70,60 @@
     const sopa = document.getElementById('sopa');
     const lista = document.getElementById('palabras');
     const mensaje = document.getElementById('mensaje');
+    const gridSize = 10;
 
-    let grid = Array(10).fill(null).map(() => Array(10).fill(''));
+    let grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+    let posicionesPalabras = {};
+    let encontradas = [];
+    let tiempoInicio = Date.now();
+    let ayudas = 0;
+    let intentos = 0;
 
     function colocarPalabra(palabra) {
-      const fila = Math.floor(Math.random() * 10);
-      const maxCol = 10 - palabra.length;
-      const col = Math.floor(Math.random() * (maxCol + 1));
+      const direcciones = ['horizontal', 'vertical'];
+      let colocada = false;
+      let intentosColocacion = 0;
 
-      for (let i = 0; i < palabra.length; i++) {
-        grid[fila][col + i] = palabra[i];
+      while (!colocada && intentosColocacion < 100) {
+        const direccion = direcciones[Math.floor(Math.random() * direcciones.length)];
+        let fila = Math.floor(Math.random() * gridSize);
+        let col = Math.floor(Math.random() * gridSize);
+
+        if (direccion === 'horizontal' && col + palabra.length <= gridSize) {
+          let libre = true;
+          for (let i = 0; i < palabra.length; i++) {
+            if (grid[fila][col + i] !== '') libre = false;
+          }
+          if (libre) {
+            posicionesPalabras[palabra] = [];
+            for (let i = 0; i < palabra.length; i++) {
+              grid[fila][col + i] = palabra[i];
+              posicionesPalabras[palabra].push([fila, col + i]);
+            }
+            colocada = true;
+          }
+        } else if (direccion === 'vertical' && fila + palabra.length <= gridSize) {
+          let libre = true;
+          for (let i = 0; i < palabra.length; i++) {
+            if (grid[fila + i][col] !== '') libre = false;
+          }
+          if (libre) {
+            posicionesPalabras[palabra] = [];
+            for (let i = 0; i < palabra.length; i++) {
+              grid[fila + i][col] = palabra[i];
+              posicionesPalabras[palabra].push([fila + i, col]);
+            }
+            colocada = true;
+          }
+        }
+
+        intentosColocacion++;
       }
     }
 
     function rellenarGrid() {
-      for (let i = 0; i < 10; i++) {
-        for (let j = 0; j < 10; j++) {
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
           if (!grid[i][j]) {
             grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
           }
@@ -83,11 +133,13 @@
 
     function renderizarSopa() {
       sopa.innerHTML = '';
-      for (let i = 0; i < 10; i++) {
-        for (let j = 0; j < 10; j++) {
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
           const celda = document.createElement('div');
           celda.className = 'celda';
           celda.textContent = grid[i][j];
+          celda.dataset.fila = i;
+          celda.dataset.col = j;
           sopa.appendChild(celda);
         }
       }
@@ -99,24 +151,115 @@
         const li = document.createElement('li');
         li.textContent = p;
         li.dataset.palabra = p;
+        li.style.cursor = 'pointer';
+        li.addEventListener('click', () => {
+          ayudas++;
+          resaltarPalabra(p);
+        });
         lista.appendChild(li);
       });
     }
 
-    function marcarEncontrada(palabra) {
-      const li = [...lista.children].find(el => el.dataset.palabra === palabra);
-      if (li) {
-        li.classList.add('encontrada');
-      }
-      if ([...lista.children].every(el => el.classList.contains('encontrada'))) {
-        mensaje.textContent = '¡Felicidades! Has encontrado todas las palabras.';
-      }
+    function resaltarPalabra(palabra) {
+      if (!posicionesPalabras[palabra]) return;
+
+      posicionesPalabras[palabra].forEach(([f, c]) => {
+        const celda = document.querySelector(`.celda[data-fila="${f}"][data-col="${c}"]`);
+        celda.classList.add('seleccionando');
+      });
+
+      setTimeout(() => {
+        posicionesPalabras[palabra].forEach(([f, c]) => {
+          const celda = document.querySelector(`.celda[data-fila="${f}"][data-col="${c}"]`);
+          celda.classList.remove('seleccionando');
+        });
+      }, 2000);
     }
 
+    let seleccionando = false;
+    let seleccion = [];
+
+    sopa.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('celda')) {
+        seleccionando = true;
+        seleccion = [e.target];
+        e.target.classList.add('seleccionando');
+      }
+    });
+
+    sopa.addEventListener('mouseover', e => {
+      if (seleccionando && e.target.classList.contains('celda') && !seleccion.includes(e.target)) {
+        seleccion.push(e.target);
+        e.target.classList.add('seleccionando');
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (seleccionando) {
+        const palabraFormada = seleccion.map(c => c.textContent).join('');
+        intentos++;
+
+        if (palabras.includes(palabraFormada) && !encontradas.includes(palabraFormada)) {
+          encontradas.push(palabraFormada);
+          const li = document.querySelector(`li[data-palabra="${palabraFormada}"]`);
+          if (li) li.style.color = 'green';
+
+          seleccion.forEach(c => {
+            c.classList.remove('seleccionando');
+            c.classList.add('encontrada');
+          });
+
+          mensaje.textContent = `¡Has encontrado "${palabraFormada}"!`;
+        } else {
+          mensaje.textContent = 'No coincide.';
+          setTimeout(() => {
+            seleccion.forEach(c => {
+              c.classList.remove('seleccionando');
+              c.style.backgroundColor = ''; // Fuerza volver al color original
+              c.style.color = '';           // Por si cambió el color de letra
+            });
+          }, 500);
+        }
+
+        if (encontradas.length === palabras.length) {
+          const duracion = Math.floor((Date.now() - tiempoInicio) / 1000);
+          mensaje.textContent = `¡Felicidades! Has encontrado todas las palabras en ${duracion} segundos. Ayudas: ${ayudas}, Intentos: ${intentos}.`;
+          enviarResultado(duracion);
+        }
+
+        seleccionando = false;
+        seleccion = [];
+      }
+    });
+
+    function enviarResultado(duracion) {
+      fetch('/api/resultados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          juegoTipo: 'sopa-letras',
+          datos: {
+            palabrasTotales: palabras,
+            encontradas,
+            fecha: new Date().toISOString(),
+            duracionSegundos: duracion,
+            ayudas,
+            intentos
+          }
+        })
+      })
+        .then(res => res.json())
+        .then(data => console.log('Resultado guardado:', data))
+        .catch(err => console.error('Error al guardar resultado:', err));
+    }
+
+    // Iniciar juego
     palabras.forEach(colocarPalabra);
     rellenarGrid();
     renderizarSopa();
     renderizarLista();
   </script>
 </body>
+
 </html>
