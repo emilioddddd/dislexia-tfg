@@ -4,48 +4,141 @@
 <head>
     <meta charset="UTF-8">
     <title>Perfil</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .info, .grafico {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .botones {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button, a button {
+            margin: 5px;
+            padding: 10px 20px;
+        }
+    </style>
 </head>
 
 <body>
     <h1 id="saludo">Cargando...</h1>
-    <button id="cerrarSesion">Cerrar sesión</button>
-    <a href="/juegos.html"><button>Ver juegos</button></a>
 
+    <div class="botones">
+        <button id="cerrarSesion">Cerrar sesión</button>
+        <a href="/juegos.html"><button>Ver juegos</button></a>
+    </div>
+
+    <div class="info" id="datos-usuario">
+        <p><strong>Usuario:</strong> <span id="username"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+        <p><strong>Rol:</strong> <span id="rol"></span></p>
+    </div>
+
+    <div class="grafico">
+        <h2>Progreso por Áreas</h2>
+        <canvas id="graficoProgreso"></canvas>
+    </div>
 
     <script>
-        // Verificar si el usuario está logueado
         async function obtenerPerfil() {
-            const res = await fetch('/api/usuarios/perfil', {
-                credentials: 'include' // para enviar cookies
-            });
-
+            const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
             const data = await res.json();
 
             if (res.ok) {
                 document.getElementById('saludo').textContent = `Bienvenido, ${data.usuario.username}`;
+                document.getElementById('username').textContent = data.usuario.username;
+                document.getElementById('email').textContent = data.usuario.email;
+                document.getElementById('rol').textContent = data.usuario.rol;
+
                 if (data.usuario.rol === 'profesional') {
-                    // Mostrar enlace al panel profesional
                     const link = document.createElement('a');
                     link.href = '/panel-profesional.html';
                     link.textContent = 'Ir al panel del profesional';
+                    link.style.display = 'block';
+                    link.style.textAlign = 'center';
+                    link.style.marginTop = '10px';
                     document.body.appendChild(link);
                 }
+
+                cargarProgreso();
             } else {
                 document.getElementById('saludo').textContent = data.mensaje;
                 document.getElementById('cerrarSesion').style.display = 'none';
             }
         }
 
-        // Logout
+        async function cargarProgreso() {
+            try {
+                const res = await fetch('/api/resultados/progreso');
+                const data = await res.json();
+                const ctx = document.getElementById('graficoProgreso').getContext('2d');
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Velocidad', 'Precisión', 'Comprensión', 'Escritura'],
+                        datasets: [{
+                            label: 'Progreso (%)',
+                            data: [data.velocidad, data.precision, data.comprension, data.escritura],
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(255, 159, 64, 0.7)',
+                                'rgba(153, 102, 255, 0.7)',
+                                'rgba(255, 99, 132, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(255, 159, 64, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 99, 132, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        },
+                        responsive: true
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cargar progreso:', error);
+            }
+        }
+
         document.getElementById('cerrarSesion').addEventListener('click', async () => {
             const res = await fetch('/api/usuarios/logout', {
                 method: 'POST',
                 credentials: 'include'
             });
 
-            const data = await res.json();
-            //alert(data.mensaje);
-            location.reload(); // recargar para volver al estado no logueado
+            await res.json();
+            location.reload();
             window.location.href = '/login.html';
         });
 

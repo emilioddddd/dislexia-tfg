@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi progreso</title>
+</head>
+<body>
+  <h1>Mi progreso</h1>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Juego</th>
+        <th>Resultado</th>
+      </tr>
+    </thead>
+    <tbody id="tablaResultados">
+      <tr><td colspan="3">Cargando...</td></tr>
+    </tbody>
+  </table>
+
+  <a href="/perfil.html">← Volver</a>
+
+  <script>
+    async function cargarResultados() {
+      const res = await fetch('/api/resultados/mis-resultados', { credentials: 'include' });
+      const data = await res.json();
+      const tabla = document.getElementById('tablaResultados');
+      tabla.innerHTML = '';
+
+      if (res.ok && Array.isArray(data.resultados)) {
+        if (data.resultados.length === 0) {
+          tabla.innerHTML = '<tr><td colspan="3">Sin resultados aún.</td></tr>';
+          return;
+        }
+
+        data.resultados.forEach(r => {
+          const fila = document.createElement('tr');
+
+          const fecha = new Date(r.fecha).toLocaleDateString('es-ES');
+          const juego = r.juego?.titulo || 'Desconocido';
+          const resumen = JSON.stringify(r.datos); // O puedes formatear
+
+          fila.innerHTML = `
+            <td>${fecha}</td>
+            <td>${juego}</td>
+            <td>${resumen}</td>
+          `;
+          tabla.appendChild(fila);
+        });
+      } else {
+        tabla.innerHTML = `<tr><td colspan="3">Error al cargar resultados</td></tr>`;
+      }
+    }
+
+    cargarResultados();
+  </script>
+</body>
+</html>

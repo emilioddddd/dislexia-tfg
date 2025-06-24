@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <title>Sopa de Letras</title>
@@ -31,16 +30,10 @@
       user-select: none;
     }
 
-    .seleccionando {
-      background-color: #87cefa !important;
-      /* azul claro */
-    }
-
     .encontrada {
-      background-color: #32cd32 !important;
-      /* verde */
-      color: black !important;
-      text-decoration: none !important;
+      background-color: #32cd32;
+      color: black;
+      text-decoration: none;
     }
 
     #palabras {
@@ -55,7 +48,6 @@
     }
   </style>
 </head>
-
 <body>
 
   <h1>Sopa de Letras</h1>
@@ -165,13 +157,17 @@
 
       posicionesPalabras[palabra].forEach(([f, c]) => {
         const celda = document.querySelector(`.celda[data-fila="${f}"][data-col="${c}"]`);
-        celda.classList.add('seleccionando');
+        celda.dataset.ayudaTemporal = 'true';
+        celda.style.backgroundColor = '#ffd700'; // amarillo
       });
 
       setTimeout(() => {
         posicionesPalabras[palabra].forEach(([f, c]) => {
           const celda = document.querySelector(`.celda[data-fila="${f}"][data-col="${c}"]`);
-          celda.classList.remove('seleccionando');
+          if (celda.dataset.ayudaTemporal === 'true') {
+            celda.style.backgroundColor = celda.classList.contains('encontrada') ? '#32cd32' : 'white';
+            delete celda.dataset.ayudaTemporal;
+          }
         });
       }, 2000);
     }
@@ -183,42 +179,49 @@
       if (e.target.classList.contains('celda')) {
         seleccionando = true;
         seleccion = [e.target];
-        e.target.classList.add('seleccionando');
+        e.target.style.backgroundColor = '#87cefa';
       }
     });
 
     sopa.addEventListener('mouseover', e => {
       if (seleccionando && e.target.classList.contains('celda') && !seleccion.includes(e.target)) {
         seleccion.push(e.target);
-        e.target.classList.add('seleccionando');
+        e.target.style.backgroundColor = '#87cefa';
       }
     });
 
     document.addEventListener('mouseup', () => {
       if (seleccionando) {
         const palabraFormada = seleccion.map(c => c.textContent).join('');
+        const palabraInvertida = palabraFormada.split('').reverse().join('');
         intentos++;
 
+        let palabraCorrecta = null;
         if (palabras.includes(palabraFormada) && !encontradas.includes(palabraFormada)) {
-          encontradas.push(palabraFormada);
-          const li = document.querySelector(`li[data-palabra="${palabraFormada}"]`);
+          palabraCorrecta = palabraFormada;
+        } else if (palabras.includes(palabraInvertida) && !encontradas.includes(palabraInvertida)) {
+          palabraCorrecta = palabraInvertida;
+        }
+
+        if (palabraCorrecta) {
+          encontradas.push(palabraCorrecta);
+          const li = document.querySelector(`li[data-palabra="${palabraCorrecta}"]`);
           if (li) li.style.color = 'green';
 
           seleccion.forEach(c => {
-            c.classList.remove('seleccionando');
+            c.style.backgroundColor = '#32cd32';
+            c.style.color = 'black';
             c.classList.add('encontrada');
           });
 
-          mensaje.textContent = `¡Has encontrado "${palabraFormada}"!`;
+          mensaje.textContent = `¡Has encontrado "${palabraCorrecta}"!`;
         } else {
           mensaje.textContent = 'No coincide.';
-          setTimeout(() => {
-            seleccion.forEach(c => {
-              c.classList.remove('seleccionando');
-              c.style.backgroundColor = ''; // Fuerza volver al color original
-              c.style.color = '';           // Por si cambió el color de letra
-            });
-          }, 500);
+          seleccion.forEach(c => {
+            c.style.backgroundColor = 'white';
+            c.style.color = 'black';
+            c.classList.remove('encontrada');
+          });
         }
 
         if (encontradas.length === palabras.length) {
@@ -249,17 +252,15 @@
           }
         })
       })
-        .then(res => res.json())
-        .then(data => console.log('Resultado guardado:', data))
-        .catch(err => console.error('Error al guardar resultado:', err));
+      .then(res => res.json())
+      .then(data => console.log('Resultado guardado:', data))
+      .catch(err => console.error('Error al guardar resultado:', err));
     }
 
-    // Iniciar juego
     palabras.forEach(colocarPalabra);
     rellenarGrid();
     renderizarSopa();
     renderizarLista();
   </script>
 </body>
-
 </html>
