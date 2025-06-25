@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Comprensión Lectora</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #fdf6e3;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .texto, .preguntas {
+      max-width: 800px;
+      background-color: white;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    .opcion {
+      margin: 10px 0;
+    }
+
+    .resultado {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Comprensión Lectora</h1>
+
+  <div class="texto" id="bloqueTexto">
+    <h2>Lee el siguiente texto</h2>
+    <p id="texto">
+      Carla tiene una gata llamada Nube. Cada mañana, Nube salta a la cama para despertar a Carla con suaves maullidos. Luego se sientan juntas a mirar por la ventana cómo salen los primeros rayos del sol.
+    </p>
+    <button id="empezarPreguntas">He leído el texto</button>
+  </div>
+
+  <div class="preguntas" id="bloquePreguntas" style="display:none;">
+    <h2>Preguntas</h2>
+    <form id="formPreguntas">
+      <div class="pregunta">
+        <p>¿Cómo se llama la gata?</p>
+        <label class="opcion"><input type="radio" name="p1" value="correcto"> Nube</label>
+        <label class="opcion"><input type="radio" name="p1" value="incorrecto"> Sol</label>
+        <label class="opcion"><input type="radio" name="p1" value="incorrecto"> Luna</label>
+      </div>
+
+      <div class="pregunta">
+        <p>¿Qué hace Nube por la mañana?</p>
+        <label class="opcion"><input type="radio" name="p2" value="correcto"> Despierta a Carla</label>
+        <label class="opcion"><input type="radio" name="p2" value="incorrecto"> Se va a dormir</label>
+        <label class="opcion"><input type="radio" name="p2" value="incorrecto"> Juega sola</label>
+      </div>
+
+      <div class="pregunta">
+        <p>¿Qué miran juntas por la ventana?</p>
+        <label class="opcion"><input type="radio" name="p3" value="correcto"> Los primeros rayos del sol</label>
+        <label class="opcion"><input type="radio" name="p3" value="incorrecto"> A otros gatos</label>
+        <label class="opcion"><input type="radio" name="p3" value="incorrecto"> La lluvia</label>
+      </div>
+
+      <button type="submit">Enviar respuestas</button>
+    </form>
+
+    <div id="resultado" class="resultado"></div>
+  </div>
+
+  <script>
+    let inicioLectura = Date.now();
+
+    document.getElementById('empezarPreguntas').addEventListener('click', () => {
+      document.getElementById('bloqueTexto').style.display = 'none';
+      document.getElementById('bloquePreguntas').style.display = 'block';
+    });
+
+    document.getElementById('formPreguntas').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const tiempoLecturaSegundos = Math.floor((Date.now() - inicioLectura) / 1000);
+
+      const respuestas = new FormData(e.target);
+      let aciertos = 0;
+
+      for (let valor of respuestas.values()) {
+        if (valor === 'correcto') aciertos++;
+      }
+
+      const totalPreguntas = 3;
+
+      document.getElementById('resultado').textContent = 
+        `Has acertado ${aciertos} de ${totalPreguntas} preguntas en ${tiempoLecturaSegundos} segundos.`;
+
+      // Guardar resultado
+      try {
+        await fetch('/api/resultados', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            juegoTipo: 'comprension',
+            datos: {
+              aciertos,
+              totalPreguntas,
+              tiempoLecturaSegundos
+            }
+          })
+        });
+      } catch (err) {
+        console.error('Error al guardar resultado:', err);
+      }
+    });
+  </script>
+</body>
+</html>

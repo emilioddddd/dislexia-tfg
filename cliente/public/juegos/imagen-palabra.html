@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Imagen y Palabra</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+    #juego {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    img {
+      width: 200px;
+      height: auto;
+      margin: 20px 0;
+    }
+    .opciones button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #resultado {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="juego">
+    <h1>Imagen y Palabra</h1>
+    <p id="progreso">Pregunta 1 de 5</p>
+    <img id="imagen" src="" alt="imagen">
+    <div class="opciones" id="opciones"></div>
+    <p id="feedback"></p>
+    <div id="resultado" style="display:none;"></div>
+  </div>
+
+  <script>
+    const preguntas = [
+      {
+        imagen: '/juegos/img/gato.jpg',
+        correcta: 'Gato',
+        opciones: ['Perro', 'Gato', 'Rana', 'Pájaro']
+      },
+      {
+        imagen: '/juegos/img/manzana.jpg',
+        correcta: 'Manzana',
+        opciones: ['Plátano', 'Naranja', 'Manzana', 'Pera']
+      },
+      {
+        imagen: '/juegos/img/zapato.jpg',
+        correcta: 'Zapato',
+        opciones: ['Camisa', 'Pantalón', 'Zapato', 'Sombrero']
+      },
+      {
+        imagen: '/juegos/img/coche.jpg',
+        correcta: 'Coche',
+        opciones: ['Barco', 'Bicicleta', 'Coche', 'Avión']
+      },
+      {
+        imagen: '/juegos/img/pan.jpg',
+        correcta: 'Pan',
+        opciones: ['Queso', 'Leche', 'Pan', 'Arroz']
+      }
+    ];
+
+    let actual = 0;
+    let aciertos = 0;
+    let intentos = 0;
+    const inicio = Date.now();
+
+    function cargarPregunta() {
+      const q = preguntas[actual];
+      document.getElementById('imagen').src = q.imagen;
+      document.getElementById('opciones').innerHTML = '';
+      document.getElementById('progreso').textContent = `Pregunta ${actual + 1} de ${preguntas.length}`;
+
+      q.opciones.forEach(op => {
+        const btn = document.createElement('button');
+        btn.textContent = op;
+        btn.onclick = () => comprobar(op);
+        document.getElementById('opciones').appendChild(btn);
+      });
+    }
+
+    function comprobar(eleccion) {
+      intentos++;
+      const correcta = preguntas[actual].correcta;
+      if (eleccion === correcta) {
+        aciertos++;
+        document.getElementById('feedback').textContent = '¡Correcto!';
+        actual++;
+        setTimeout(() => {
+          document.getElementById('feedback').textContent = '';
+          if (actual < preguntas.length) {
+            cargarPregunta();
+          } else {
+            finalizar();
+          }
+        }, 1000);
+      } else {
+        document.getElementById('feedback').textContent = 'Intenta de nuevo';
+      }
+    }
+
+    function finalizar() {
+      const tiempo = Math.round((Date.now() - inicio) / 1000);
+      document.getElementById('opciones').innerHTML = '';
+      document.getElementById('progreso').style.display = 'none';
+      document.getElementById('imagen').style.display = 'none';
+      document.getElementById('resultado').style.display = 'block';
+      document.getElementById('resultado').innerHTML = `
+        <p>Juego finalizado.</p>
+        <p>Aciertos: ${aciertos}</p>
+        <p>Intentos: ${intentos}</p>
+        <p>Tiempo: ${tiempo} segundos</p>
+      `;
+
+      fetch('/api/resultados', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          juegoTipo: 'imagen-palabra',
+          datos: { aciertos, intentos, tiempo }
+        })
+      }).then(() => console.log('Resultado enviado'));
+    }
+
+    cargarPregunta();
+  </script>
+</body>
+
+</html>
