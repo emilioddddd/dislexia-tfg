@@ -1,149 +1,213 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Perfil</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
+  <meta charset="UTF-8" />
+  <title>Perfil</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
 
-        h1 {
-            text-align: center;
-        }
+    h1 {
+      text-align: center;
+    }
 
-        .info, .grafico {
-            max-width: 600px;
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
+    .info,
+    .grafico {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
 
-        canvas {
-            max-width: 100%;
-        }
+    canvas {
+      max-width: 100%;
+    }
 
-        .botones {
-            text-align: center;
-            margin-top: 20px;
-        }
+    .botones {
+      text-align: center;
+      margin-top: 20px;
+    }
 
-        button, a button {
-            margin: 5px;
-            padding: 10px 20px;
-        }
-    </style>
+    button,
+    a button {
+      margin: 5px;
+      padding: 10px 20px;
+    }
+  </style>
 </head>
-
 <body>
-    <h1 id="saludo">Cargando...</h1>
+  <h1 id="saludo">Cargando...</h1>
 
-    <div class="botones">
-        <button id="cerrarSesion">Cerrar sesión</button>
-        <a href="/juegos.html"><button>Ver juegos</button></a>
-    </div>
+  <div class="botones">
+    <button id="cerrarSesion">Cerrar sesión</button>
+    <a href="/juegos.html"><button>Ver juegos</button></a>
+  </div>
 
-    <div class="info" id="datos-usuario">
-        <p><strong>Usuario:</strong> <span id="username"></span></p>
-        <p><strong>Email:</strong> <span id="email"></span></p>
-        <p><strong>Rol:</strong> <span id="rol"></span></p>
-    </div>
+  <div class="info" id="datos-usuario">
+    <p><strong>Usuario:</strong> <span id="username"></span></p>
+    <p><strong>Email:</strong> <span id="email"></span></p>
+    <p><strong>Rol:</strong> <span id="rol"></span></p>
+  </div>
 
-    <div class="grafico">
-        <h2>Progreso por Áreas</h2>
-        <canvas id="graficoProgreso"></canvas>
-    </div>
+  <div class="grafico" id="bloqueProgreso">
+    <h2>Progreso por Áreas</h2>
+    <canvas id="graficoProgreso"></canvas>
+  </div>
 
-    <script>
-        async function obtenerPerfil() {
-            const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
-            const data = await res.json();
+  <div id="bloqueCitas">
+    <h2>Citas desde hoy</h2>
+    <ul id="listaCitas"></ul>
+  </div>
 
-            if (res.ok) {
-                document.getElementById('saludo').textContent = `Bienvenido, ${data.usuario.username}`;
-                document.getElementById('username').textContent = data.usuario.username;
-                document.getElementById('email').textContent = data.usuario.email;
-                document.getElementById('rol').textContent = data.usuario.rol;
+  <script>
+    let rolUsuario = null;
 
-                if (data.usuario.rol === 'profesional') {
-                    const link = document.createElement('a');
-                    link.href = '/panel-profesional.html';
-                    link.textContent = 'Ir al panel del profesional';
-                    link.style.display = 'block';
-                    link.style.textAlign = 'center';
-                    link.style.marginTop = '10px';
-                    document.body.appendChild(link);
-                }
+    async function obtenerPerfil() {
+      const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+      const data = await res.json();
 
-                cargarProgreso();
-            } else {
-                document.getElementById('saludo').textContent = data.mensaje;
-                document.getElementById('cerrarSesion').style.display = 'none';
-            }
+      if (res.ok) {
+        rolUsuario = data.usuario.rol;
+        document.getElementById('saludo').textContent = `Bienvenido, ${data.usuario.username}`;
+        document.getElementById('username').textContent = data.usuario.username;
+        document.getElementById('email').textContent = data.usuario.email;
+        document.getElementById('rol').textContent = data.usuario.rol;
+
+        if (rolUsuario === 'profesional') {
+          document.getElementById('bloqueProgreso').style.display = 'none';
+
+          const link = document.createElement('a');
+          link.href = '/panel-profesional.html';
+          link.textContent = 'Ir al panel del profesional';
+          link.style.display = 'block';
+          link.style.textAlign = 'center';
+          link.style.marginTop = '10px';
+          document.body.appendChild(link);
+        } else {
+          cargarProgreso();
         }
 
-        async function cargarProgreso() {
-            try {
-                const res = await fetch('/api/resultados/progreso');
-                const data = await res.json();
-                const ctx = document.getElementById('graficoProgreso').getContext('2d');
+        mostrarCitas();
+      } else {
+        document.getElementById('saludo').textContent = data.mensaje;
+        document.getElementById('cerrarSesion').style.display = 'none';
+      }
+    }
 
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Velocidad', 'Precisión', 'Comprensión', 'Escritura'],
-                        datasets: [{
-                            label: 'Progreso (%)',
-                            data: [data.velocidad, data.precision, data.comprension, data.escritura],
-                            backgroundColor: [
-                                'rgba(75, 192, 192, 0.7)',
-                                'rgba(255, 159, 64, 0.7)',
-                                'rgba(153, 102, 255, 0.7)',
-                                'rgba(255, 99, 132, 0.7)'
-                            ],
-                            borderColor: [
-                                'rgba(75, 192, 192, 1)',
-                                'rgba(255, 159, 64, 1)',
-                                'rgba(153, 102, 255, 1)',
-                                'rgba(255, 99, 132, 1)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
-                            }
-                        },
-                        responsive: true
-                    }
-                });
-            } catch (error) {
-                console.error('Error al cargar progreso:', error);
-            }
-        }
+    async function cargarProgreso() {
+      try {
+        const res = await fetch('/api/resultados/progreso');
+        const data = await res.json();
+        const ctx = document.getElementById('graficoProgreso').getContext('2d');
 
-        document.getElementById('cerrarSesion').addEventListener('click', async () => {
-            const res = await fetch('/api/usuarios/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-
-            await res.json();
-            location.reload();
-            window.location.href = '/login.html';
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Velocidad', 'Precisión', 'Comprensión', 'Escritura'],
+            datasets: [{
+              label: 'Progreso (%)',
+              data: [data.velocidad, data.precision, data.comprension, data.escritura],
+              backgroundColor: [
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(255, 159, 64, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 99, 132, 0.7)'
+              ],
+              borderColor: [
+                'rgba(75, 192, 192, 1)',
+                'rgba(255, 159, 64, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 99, 132, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            },
+            responsive: true
+          }
         });
+      } catch (error) {
+        console.error('Error al cargar progreso:', error);
+      }
+    }
 
-        obtenerPerfil();
-    </script>
+    async function mostrarCitas() {
+      const endpoint = rolUsuario === 'profesional'
+        ? '/api/citas/mis-citas'
+        : '/api/citas/mis-citas-paciente';
+
+      const res = await fetch(endpoint, { credentials: 'include' });
+      const data = await res.json();
+      const lista = document.getElementById('listaCitas');
+      lista.innerHTML = '';
+
+      if (res.ok && data.eventos) {
+        const ahora = new Date();
+        ahora.setHours(0, 0, 0, 0);
+
+        const citasDesdeHoy = data.eventos
+          .filter(evt => {
+            const fecha = new Date(evt.start);
+            return !isNaN(fecha) && fecha >= ahora;
+          })
+          .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+        if (citasDesdeHoy.length === 0) {
+          lista.innerHTML = '<li>No hay citas desde hoy.</li>';
+          return;
+        }
+
+        citasDesdeHoy.forEach(evt => {
+          const div = document.createElement('div');
+          div.innerHTML = `
+            <h3>${new Date(evt.start).toLocaleString()}</h3>
+            <table border="1" style="width:100%; margin-bottom: 20px;">
+              <thead>
+                <tr>
+                  ${rolUsuario === 'profesional' ? '<th>Paciente</th>' : ''}
+                  <th>Juego</th>
+                  ${rolUsuario === 'paciente' ? '<th>¿Jugado?</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>
+                ${evt.juegos.map(j => `
+                  <tr>
+                    ${rolUsuario === 'profesional' ? `<td>${evt.title}</td>` : ''}
+                    <td>${j.titulo}</td>
+                    ${rolUsuario === 'paciente'
+                      ? `<td style="text-align:center;"><input type="checkbox" disabled ${j.jugado ? 'checked' : ''}></td>`
+                      : ''}
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          `;
+          lista.appendChild(div);
+        });
+      }
+    }
+
+    document.getElementById('cerrarSesion').addEventListener('click', async () => {
+      const res = await fetch('/api/usuarios/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      await res.json();
+      window.location.href = '/login.html';
+    });
+
+    obtenerPerfil();
+  </script>
 </body>
-
 </html>

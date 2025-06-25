@@ -8,6 +8,8 @@ module.exports = function requiereRol(rolEsperado) {
       return res.status(403).json({ mensaje: 'No tienes permisos suficientes' });
     }
 
+    req.usuario = req.session.usuario;
+
     next();
   };
 };

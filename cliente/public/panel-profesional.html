@@ -6,6 +6,8 @@
     <title>Panel del Profesional</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 </head>
 
 <body>
@@ -25,9 +27,7 @@
 
         <button id="abrirModalCita">Crear nueva cita</button>
 
-        <!-- Modal de creación de cita -->
-        <div id="modalCita"
-            style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid black; z-index:1000;">
+        <div id="modalCita" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid black; z-index:1000;">
             <h3>Nueva cita</h3>
             <form id="formCita">
                 <label>Paciente:
@@ -39,6 +39,9 @@
                 <label>Hora:
                     <select name="hora" id="horaDisponible" required></select>
                 </label><br>
+                <label>Juegos:
+                    <select id="selectJuegos" name="juegos" multiple></select>
+                </label><br><br>
                 <button type="submit">Guardar cita</button>
                 <button type="button" id="cerrarModalCita">Cancelar</button>
             </form>
@@ -50,27 +53,11 @@
         <button id="abrirModalRegistrarPaciente">Registrar nuevo paciente</button>
     </div>
 
-    <!-- Modal de nuevo paciente -->
-    <div id="modalPaciente"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:9999;">
-        <div style="background:white; margin:10% auto; padding:20px; width:300px; border-radius:8px;">
-            <h2>Registrar nuevo paciente</h2>
-            <form id="formPaciente">
-                <label>Email: <input type="email" name="email" required></label><br>
-                <label>Usuario: <input type="text" name="username" required></label><br>
-                <label>Contraseña: <input type="password" name="password" required></label><br>
-                <label>DNI: <input type="text" name="dni" required></label><br>
-                <label>Nombre completo: <input type="text" name="nombre" required></label><br><br>
-                <button type="submit">Registrar</button>
-                <button type="button" id="cerrarModal">Cancelar</button>
-            </form>
-            <p id="mensajePaciente" style="color: green;"></p>
-        </div>
-    </div>
-
     <button id="cerrarSesion">Cerrar sesión</button>
 
     <script>
+        let choicesJuegos;
+
         async function verificarSesion() {
             const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
             const data = await res.json();
@@ -99,6 +86,29 @@
             }
         }
 
+        async function cargarJuegos() {
+            const res = await fetch('/api/juegos', { credentials: 'include' });
+            const data = await res.json();
+            const select = document.getElementById('selectJuegos');
+            select.innerHTML = '';
+
+            if (res.ok) {
+                data.juegos.forEach(j => {
+                    const option = document.createElement('option');
+                    option.value = j._id;
+                    option.textContent = j.titulo;
+                    select.appendChild(option);
+                });
+
+                if (choicesJuegos) choicesJuegos.destroy();
+                choicesJuegos = new Choices('#selectJuegos', {
+                    removeItemButton: true,
+                    placeholder: true,
+                    placeholderValue: 'Seleccione juegos...'
+                });
+            }
+        }
+
         async function cargarCalendario() {
             const res = await fetch('/api/citas/mis-citas', { credentials: 'include' });
             const data = await res.json();
@@ -116,7 +126,6 @@
             calendar.render();
         }
 
-        // Abrir modal nueva cita
         document.getElementById('abrirModalCita').addEventListener('click', async () => {
             document.getElementById('modalCita').style.display = 'block';
 
@@ -133,7 +142,8 @@
                 });
             }
 
-            // Evita fechas pasadas
+            cargarJuegos();
+
             const hoy = new Date().toISOString().split('T')[0];
             const fechaInput = document.getElementById('fechaDia');
             fechaInput.min = hoy;
@@ -141,15 +151,13 @@
             fechaInput.dispatchEvent(new Event('change'));
         });
 
-
-        // Cerrar modal cita
         document.getElementById('cerrarModalCita').addEventListener('click', () => {
             document.getElementById('modalCita').style.display = 'none';
             document.getElementById('formCita').reset();
             document.getElementById('mensajeCita').textContent = '';
+            if (choicesJuegos) choicesJuegos.clearStore();
         });
 
-        // Cambiar fecha para cargar horas disponibles
         document.getElementById('fechaDia').addEventListener('change', async (e) => {
             const fecha = e.target.value;
             const horaSelect = document.getElementById('horaDisponible');
@@ -176,14 +184,15 @@
             }
         });
 
-        // Crear cita
         document.getElementById('formCita').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
+            const juegosSeleccionados = Array.from(document.getElementById('selectJuegos').selectedOptions).map(opt => opt.value);
             const fechaCompleta = `${form.fechaDia.value}T${form.hora.value}`;
             const cita = {
                 paciente: form.paciente.value,
-                fecha: fechaCompleta
+                fecha: fechaCompleta,
+                juegos: juegosSeleccionados
             };
 
             const res = await fetch('/api/citas/nueva', {
@@ -199,6 +208,7 @@
                 mensaje.textContent = 'Cita creada correctamente.';
                 mensaje.style.color = 'green';
                 form.reset();
+                if (choicesJuegos) choicesJuegos.clearStore();
                 setTimeout(() => {
                     document.getElementById('modalCita').style.display = 'none';
                     mensaje.textContent = '';
@@ -206,49 +216,6 @@
                 }, 1500);
             } else {
                 mensaje.textContent = data.mensaje || 'Error al crear cita.';
-                mensaje.style.color = 'red';
-            }
-        });
-
-        // Modal paciente
-        document.getElementById('abrirModalRegistrarPaciente').addEventListener('click', () => {
-            document.getElementById('modalPaciente').style.display = 'block';
-        });
-
-        document.getElementById('cerrarModal').addEventListener('click', () => {
-            document.getElementById('modalPaciente').style.display = 'none';
-            document.getElementById('formPaciente').reset();
-            document.getElementById('mensajePaciente').textContent = '';
-        });
-
-        document.getElementById('formPaciente').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const paciente = {
-                email: form.email.value,
-                username: form.username.value,
-                password: form.password.value,
-                dni: form.dni.value,
-                nombre: form.nombre.value
-            };
-            const res = await fetch('/api/usuarios/registrar-paciente', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(paciente)
-            });
-            const data = await res.json();
-            const mensaje = document.getElementById('mensajePaciente');
-            if (res.ok) {
-                mensaje.textContent = 'Paciente registrado correctamente.';
-                form.reset();
-                setTimeout(() => {
-                    document.getElementById('modalPaciente').style.display = 'none';
-                    mensaje.textContent = '';
-                    obtenerPacientes();
-                }, 1500);
-            } else {
-                mensaje.textContent = data.mensaje || 'Error al registrar paciente.';
                 mensaje.style.color = 'red';
             }
         });

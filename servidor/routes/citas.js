@@ -2,17 +2,21 @@ const express = require('express');
 const router = express.Router();
 const requiereRol = require('../middleware/requiereRol');
 const Cita = require('../models/Cita');
+const Juego = require('../models/Juego');
+const Resultado = require('../models/Resultado');
 
 // Obtener citas del profesional logueado (para el calendario)
 router.get('/mis-citas', requiereRol('profesional'), async (req, res) => {
   try {
     const citas = await Cita.find({ profesional: req.session.usuario.id })
       .populate('paciente', 'nombre')
+      .populate('juegos', 'titulo')
       .sort({ fecha: 1 });
 
     const eventos = citas.map(cita => ({
       title: `${cita.paciente.nombre}`,
-      start: cita.fecha
+      start: cita.fecha,
+      juegos: cita.juegos.map(j => ({ titulo: j.titulo })) // Agrega los juegos
     }));
 
     res.json({ eventos });
@@ -21,6 +25,32 @@ router.get('/mis-citas', requiereRol('profesional'), async (req, res) => {
     res.status(500).json({ mensaje: 'Error al obtener las citas' });
   }
 });
+
+// Obtener citas del paciente logueado (para el calendario)
+router.get('/mis-citas-paciente', requiereRol('paciente'), async (req, res) => {
+  try {
+    const citas = await Cita.find({ paciente: req.session.usuario.id })
+      .populate('juegos')
+      .sort({ fecha: 1 });
+
+    const resultados = await Resultado.find({ paciente: req.session.usuario.id });
+
+    const eventos = citas.map(cita => ({
+      start: cita.fecha,
+      juegos: cita.juegos.map(juego => ({
+        titulo: juego.titulo,
+        jugado: resultados.some(r => r.juego.toString() === juego._id.toString())
+      }))
+    }));
+
+    res.json({ eventos });
+  } catch (error) {
+    console.error('Error al obtener citas del paciente:', error);
+    res.status(500).json({ mensaje: 'Error al obtener citas del paciente' });
+  }
+});
+
+
 
 // Obtener todos los bloques de horarios del día y si están ocupados
 router.get('/horarios-dia', requiereRol('profesional'), async (req, res) => {
@@ -69,31 +99,23 @@ router.get('/horarios-dia', requiereRol('profesional'), async (req, res) => {
 // Crear una nueva cita si no hay conflicto
 router.post('/nueva', requiereRol('profesional'), async (req, res) => {
   try {
-    const { paciente, fecha } = req.body;
-    const fechaCita = new Date(fecha);
-
-    const existe = await Cita.findOne({
-      profesional: req.session.usuario.id,
-      fecha: fechaCita
-    });
-
-    if (existe) {
-      return res.status(400).json({ mensaje: 'Ya hay una cita programada a esa hora.' });
-    }
+    const { paciente, fecha, juegos } = req.body;
 
     const nuevaCita = new Cita({
       paciente,
-      profesional: req.session.usuario.id,
-      fecha: fechaCita
+      profesional: req.session.usuario.id, // ← Cambiado aquí
+      fecha: new Date(fecha),
+      juegos: juegos || []
     });
 
     await nuevaCita.save();
-    res.json({ mensaje: 'Cita creada correctamente.' });
+    res.status(201).json({ mensaje: 'Cita creada correctamente', cita: nuevaCita });
   } catch (error) {
     console.error('Error al crear la cita:', error);
-    res.status(500).json({ mensaje: 'Error al crear la cita' });
+    res.status(500).json({ mensaje: 'Error al crear la cita.' });
   }
 });
+
 
 // Eliminar una cita por ID (si pertenece al profesional)
 router.delete('/:id', requiereRol('profesional'), async (req, res) => {
