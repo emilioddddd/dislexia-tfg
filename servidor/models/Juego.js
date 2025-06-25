@@ -5,7 +5,8 @@ const juegoSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   descripcion: { type: String, required: true },
   tipo: { type: String, required: true },
-  ruta: { type: String, required: true }
+  ruta: { type: String, required: true },
+  areas: [String]
 });
 
 module.exports = mongoose.model('Juego', juegoSchema);

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ahorcado Adaptado</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    .letra { font-size: 2em; margin: 0 5px; border-bottom: 2px solid #000; width: 30px; display: inline-block; }
+    #teclado button { margin: 5px; padding: 10px; font-size: 1em; }
+    #estado { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Ahorcado Adaptado</h1>
+  <p><strong>Pista:</strong> <span id="pista"></span></p>
+  <div id="palabra"></div>
+  <div id="teclado"></div>
+  <p id="estado"></p>
+
+  <script>
+    const palabras = [
+      { palabra: "guitarra", pista: "Instrumento musical de cuerdas" },
+      { palabra: "ventana", pista: "Está en la pared y deja pasar la luz" },
+      { palabra: "escuela", pista: "Lugar donde aprendes" }
+    ];
+
+    let seleccionada, letrasCorrectas, letrasIncorrectas, intentos, maxIntentos = 6, inicio;
+
+    function iniciarJuego() {
+      const elegida = palabras[Math.floor(Math.random() * palabras.length)];
+      seleccionada = elegida.palabra.toLowerCase();
+      document.getElementById("pista").textContent = elegida.pista;
+      letrasCorrectas = [];
+      letrasIncorrectas = [];
+      intentos = 0;
+      inicio = new Date();
+      mostrarPalabra();
+      crearTeclado();
+      document.getElementById("estado").textContent = "";
+    }
+
+    function mostrarPalabra() {
+      const contenedor = document.getElementById("palabra");
+      contenedor.innerHTML = "";
+      for (let letra of seleccionada) {
+        const span = document.createElement("span");
+        span.className = "letra";
+        span.textContent = letrasCorrectas.includes(letra) ? letra : "";
+        contenedor.appendChild(span);
+      }
+    }
+
+    function crearTeclado() {
+      const teclado = document.getElementById("teclado");
+      teclado.innerHTML = "";
+      for (let i = 65; i <= 90; i++) {
+        const letra = String.fromCharCode(i).toLowerCase();
+        const btn = document.createElement("button");
+        btn.textContent = letra;
+        btn.onclick = () => elegirLetra(letra, btn);
+        teclado.appendChild(btn);
+      }
+    }
+
+    function elegirLetra(letra, boton) {
+      boton.disabled = true;
+      if (seleccionada.includes(letra)) {
+        letrasCorrectas.push(letra);
+      } else {
+        letrasIncorrectas.push(letra);
+        intentos++;
+      }
+      mostrarPalabra();
+      comprobarFin();
+    }
+
+    function comprobarFin() {
+      const estado = document.getElementById("estado");
+      if (seleccionada.split("").every(l => letrasCorrectas.includes(l))) {
+        const duracion = Math.floor((new Date() - inicio) / 1000);
+        estado.textContent = `¡Correcto! Tiempo: ${duracion}s. Fallos: ${letrasIncorrectas.length}`;
+        enviarResultado(duracion, true);
+        desactivarTeclado();
+      } else if (intentos >= maxIntentos) {
+        estado.textContent = `Fallaste. La palabra era "${seleccionada}".`;
+        enviarResultado(null, false);
+        desactivarTeclado();
+      }
+    }
+
+    function desactivarTeclado() {
+      document.querySelectorAll("#teclado button").forEach(btn => btn.disabled = true);
+    }
+
+    function enviarResultado(tiempo, acierto) {
+      fetch("/api/resultados", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          juegoTipo: "ahorcado",
+          datos: {
+            palabra: seleccionada,
+            letrasCorrectas,
+            letrasIncorrectas,
+            intentos,
+            duracionSegundos: tiempo,
+            acierto,
+            fecha: new Date().toISOString()
+          }
+        })
+      }).then(res => res.json()).then(data => {
+        console.log("Resultado enviado:", data);
+      }).catch(err => console.error("Error:", err));
+    }
+
+    iniciarJuego();
+  </script>
+</body>
+</html>

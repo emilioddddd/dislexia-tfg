@@ -6,119 +6,92 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f4f4f4;
+      padding: 20px;
+      background-color: #f0f8ff;
     }
 
     h1 {
-      color: #333;
       text-align: center;
+      color: #333;
     }
 
     .juego {
       background-color: #fff;
-      border: 1px solid #ddd;
+      border: 1px solid #ccc;
       padding: 15px;
-      margin: 10px auto;
-      width: 90%;
-      max-width: 600px;
+      margin: 15px auto;
       border-radius: 8px;
+      max-width: 600px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .juego h2 {
-      margin: 0;
-      color: #222;
+    .juego h3 {
+      margin: 0 0 10px;
     }
 
     .juego p {
-      color: #555;
+      margin: 5px 0;
     }
 
-    .juego a {
-      display: inline-block;
+    .juego button {
       margin-top: 10px;
-      text-decoration: none;
-      color: #fff;
-      background-color: #007BFF;
-      padding: 8px 12px;
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
       border-radius: 4px;
+      cursor: pointer;
     }
 
-    #volver {
-      display: inline-block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color: #6c757d;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-    }
-
-    #volver:hover {
-      background-color: #5a6268;
-    }
-
-    #contenedor {
-      max-width: 800px;
-      margin: 0 auto;
+    .juego button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
-  <div id="contenedor">
-    <h1>Juegos disponibles para la dislexia</h1>
-    <div id="listaJuegos">
-      <p>Cargando juegos...</p>
-    </div>
 
-    <a id="volver" href="perfil.html">← Volver al inicio</a>
-  </div>
+  <h1>Actividades y Juegos</h1>
+  <div id="lista-juegos"></div>
 
   <script>
     async function cargarJuegos() {
       try {
-        const res = await fetch('/api/juegos');
+        const res = await fetch('/api/juegos', {
+          credentials: 'include' // necesario para sesiones
+        });
+
         const data = await res.json();
-        const contenedor = document.getElementById('listaJuegos');
+        console.log('Respuesta de /api/juegos:', data);
+
+        const juegos = Array.isArray(data) ? data : data.juegos || [];
+
+        if (!juegos.length) {
+          document.getElementById('lista-juegos').innerHTML = '<p>No hay juegos disponibles.</p>';
+          return;
+        }
+
+        const contenedor = document.getElementById('lista-juegos');
         contenedor.innerHTML = '';
 
-        if (res.ok && Array.isArray(data.juegos)) {
-          if (data.juegos.length === 0) {
-            contenedor.innerHTML = '<p>No hay juegos disponibles aún.</p>';
-            return;
-          }
-
-          data.juegos.forEach(juego => {
-            const div = document.createElement('div');
-            div.className = 'juego';
-
-            const titulo = document.createElement('h2');
-            titulo.textContent = juego.titulo;
-
-            const descripcion = document.createElement('p');
-            descripcion.textContent = juego.descripcion;
-
-            const enlace = document.createElement('a');
-            enlace.href = juego.ruta;
-            enlace.textContent = 'Jugar ahora';
-
-            div.appendChild(titulo);
-            div.appendChild(descripcion);
-            div.appendChild(enlace);
-
-            contenedor.appendChild(div);
-          });
-        } else {
-          contenedor.innerHTML = `<p>${data.mensaje || 'Error al cargar los juegos.'}</p>`;
-        }
+        juegos.forEach(juego => {
+          const div = document.createElement('div');
+          div.className = 'juego';
+          div.innerHTML = `
+            <h3>${juego.titulo}</h3>
+            <p>${juego.descripcion}</p>
+            <p><strong>Áreas evaluadas:</strong> ${juego.areas ? juego.areas.join(', ') : 'N/A'}</p>
+            <a href="${juego.ruta}"><button>Jugar</button></a>
+          `;
+          contenedor.appendChild(div);
+        });
       } catch (err) {
-        console.error(err);
-        document.getElementById('listaJuegos').innerHTML = '<p>Error del servidor</p>';
+        console.error('Error al cargar juegos:', err);
+        document.getElementById('lista-juegos').innerHTML = '<p style="color:red">Error al cargar los juegos. Intenta más tarde.</p>';
       }
     }
 
     cargarJuegos();
   </script>
+
 </body>
 </html>
