@@ -136,4 +136,40 @@ router.delete('/:id', requiereRol('profesional'), async (req, res) => {
   }
 });
 
+// GET /api/citas/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const cita = await Cita.findById(req.params.id).lean();
+    if (!cita) {
+      return res.status(404).json({ mensaje: 'Cita no encontrada' });
+    }
+    res.json(cita);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ mensaje: 'Error al obtener la cita' });
+  }
+});
+
+// PUT /api/citas/:id — Actualizar cita
+router.put('/:id', async (req, res) => {
+  try {
+    const { fecha, juegos } = req.body;
+
+    const citaActualizada = await Cita.findByIdAndUpdate(
+      req.params.id,
+      { fecha, juegos },
+      { new: true }
+    );
+
+    if (!citaActualizada) {
+      return res.status(404).json({ mensaje: 'Cita no encontrada' });
+    }
+
+    res.json({ mensaje: 'Cita actualizada', cita: citaActualizada });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ mensaje: 'Error al actualizar cita' });
+  }
+});
+
 module.exports = router;

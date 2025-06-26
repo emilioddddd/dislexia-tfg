@@ -1,212 +1,362 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>Citas del Día</title>
-  <style>
-    #modalCita {
-      display: none;
-      position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      padding: 20px;
-      border: 1px solid black;
-      z-index: 1000;
-    }
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      z-index: 999;
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+  <link rel="stylesheet" href="/styles/ver-citas-dia.css">
 </head>
+
 <body>
-  <h1 id="fechaSeleccionada">Día seleccionado</h1>
+  <div id="cabecera-container"></div>
 
-  
+  <div class="contenedor">
+    <h1 id="fechaSeleccionada">Día seleccionado</h1>
+    <div class="contenedor-flex">
+      <div class="horario">
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Paciente</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHorarios">
+            <tr>
+              <td colspan="3">Cargando...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pacientes">
+        <h2>Pacientes con cita</h2>
+        <ul id="listaPacientes"></ul>
+      </div>
+    </div>
+  </div>
 
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Hora</th>
-        <th>Paciente</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="tablaHorarios">
-      <tr><td colspan="3">Cargando...</td></tr>
-    </tbody>
-  </table>
-
-  <h2>Pacientes con cita</h2>
-  <ul id="listaPacientes"></ul>
-
-  <!-- Modal -->
+  <!-- Overlays y Modales -->
   <div id="overlay"></div>
-  <div id="modalCita">
+
+  <div id="modalCita" class="modal">
     <h3>Nueva cita</h3>
     <form id="formCita">
-      <input type="hidden" name="fecha" id="inputFecha">
-      <input type="hidden" name="hora" id="inputHora">
+      <input type="hidden" id="inputFecha">
+      <input type="hidden" id="inputHora">
       <label>Paciente:
-        <select name="paciente" required id="selectPaciente"></select>
+        <select id="selectPaciente" required></select>
       </label><br><br>
-      <label>Fecha y hora:
-        <span id="textoFechaHora"></span>
+      <label>Juegos:
+        <select id="selectJuegos" name="juegosCrear" multiple required></select>
       </label><br><br>
+      <label>Fecha y hora: <span id="textoFechaHora"></span></label><br><br>
       <button type="submit">Guardar cita</button>
       <button type="button" onclick="cerrarModal()">Cancelar</button>
     </form>
     <p id="mensajeCita"></p>
   </div>
 
+  <div id="modalConfirmacion" class="modal">
+    <p id="textoConfirmacion"></p>
+    <div class="acciones-modal">
+      <button id="btnConfirmarEliminar">Sí, eliminar</button>
+      <button onclick="cerrarModalConfirmacion()">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="modalEditarCita" class="modal">
+    <h3>Editar cita</h3>
+    <form id="formEditarCita">
+      <input type="hidden" id="editarCitaId">
+      <label>Paciente:
+        <select id="editarSelectPaciente" disabled></select>
+      </label><br><br>
+      <label>Juegos:
+        <select id="editarSelectJuegos" name="juegosEditar" multiple required></select>
+      </label><br><br>
+      <label>Nueva fecha:
+        <input type="date" id="editarFecha" required>
+      </label><br><br>
+      <label>Hora disponible:
+        <select id="editarHora" required></select>
+      </label><br><br>
+      <button type="submit">Guardar cambios</button>
+      <button type="button" onclick="cerrarModalEditar()">Cancelar</button>
+    </form>
+    <p id="mensajeEditarCita"></p>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <script>
     let fechaGlobal = '';
     let horaGlobal = '';
+    let citaIdParaEliminar = null;
+    let choicesJuegosCrear, choicesJuegosEditar;
 
-    function capitalizar(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
+    function inicializarChoices(select, instancia) {
+      if (instancia) instancia.destroy();
+      return new Choices(select, { removeItemButton: true });
+    }
+
+    async function cargarCabecera() {
+      const resCabecera = await fetch('/partials/cabecera.html');
+      const htmlCabecera = await resCabecera.text();
+      document.getElementById('cabecera-container').innerHTML = htmlCabecera;
+
+      const resUsuario = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+      const data = await resUsuario.json();
+      const usuario = data.usuario;
+
+      if (usuario?.rol === 'profesional') {
+        document.getElementById('btnPanel')?.style.setProperty('display', 'inline-block');
+        document.getElementById('linkProfesional')?.style.setProperty('display', 'inline-block');
+      }
+
+      const path = window.location.pathname;
+      if (path.includes('perfil.html')) document.getElementById('btnPerfil')?.classList.add('boton-activo');
+      if (path.includes('juegos.html')) document.getElementById('btnJuegos')?.classList.add('boton-activo');
+      if (path.includes('panel-profesional.html') || path.includes('ver-citas-dia.html')) {
+        document.getElementById('btnPanel')?.classList.add('boton-activo');
+      }
+
+      document.getElementById('cerrarSesion')?.addEventListener('click', async () => {
+        await fetch('/api/usuarios/logout', { method: 'POST', credentials: 'include' });
+        window.location.href = '/login.html';
+      });
     }
 
     async function cargarHorarios() {
-      const params = new URLSearchParams(window.location.search);
-      const fecha = params.get('fecha');
+      const fecha = new URLSearchParams(window.location.search).get('fecha');
       if (!fecha) return;
-
       fechaGlobal = fecha;
-      const fechaObj = new Date(fecha);
-      const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      let fechaFormateada = new Intl.DateTimeFormat('es-ES', opciones).format(fechaObj);
-      fechaFormateada = fechaFormateada.split(' ').map(capitalizar).join(' ');
-      document.getElementById('fechaSeleccionada').textContent = `${fechaFormateada}`;
 
-      try {
-        const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
-        const data = await res.json();
-        const cuerpo = document.getElementById('tablaHorarios');
-        const listaPacientes = document.getElementById('listaPacientes');
-        cuerpo.innerHTML = '';
-        listaPacientes.innerHTML = '';
+      const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
+      const data = await res.json();
 
-        const pacientesUnicos = new Set();
+      const tbody = document.getElementById('tablaHorarios');
+      const listaPacientes = document.getElementById('listaPacientes');
+      tbody.innerHTML = '';
+      listaPacientes.innerHTML = '';
 
-        if (res.ok && Array.isArray(data.horarios)) {
-          data.horarios.forEach(h => {
-            const fila = document.createElement('tr');
+      const fechaFormateada = new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(fecha));
+      document.getElementById('fechaSeleccionada').textContent = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
 
-            const hora = document.createElement('td');
-            hora.textContent = h.hora;
-            fila.appendChild(hora);
+      const pacientesSet = new Set();
 
-            const paciente = document.createElement('td');
-            paciente.textContent = h.paciente || '-';
-            fila.appendChild(paciente);
+      data.horarios.forEach(h => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `<td>${h.hora}</td><td>${h.paciente || '-'}</td><td></td>`;
+        const acciones = fila.querySelector('td:last-child');
 
-            const acciones = document.createElement('td');
-            if (h._id) {
-              const btnEliminar = document.createElement('button');
-              btnEliminar.textContent = 'Eliminar cita';
-              btnEliminar.onclick = async () => {
-                if (confirm(`¿Eliminar cita de ${h.paciente} a las ${h.hora}?`)) {
-                  const resp = await fetch(`/api/citas/${h._id}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                  });
-                  if (resp.ok) cargarHorarios();
-                  else alert('Error al eliminar la cita');
-                }
-              };
-              acciones.appendChild(btnEliminar);
-            } else {
-              const btnAgregar = document.createElement('button');
-              btnAgregar.textContent = 'Añadir cita';
-              btnAgregar.onclick = () => abrirModal(h.hora);
-              acciones.appendChild(btnAgregar);
-            }
-            fila.appendChild(acciones);
+        if (h._id) {
+          const btnE = document.createElement('button');
+          btnE.textContent = 'Editar cita';
+          btnE.onclick = () => abrirModalEditar(h);
+          acciones.appendChild(btnE);
 
-            cuerpo.appendChild(fila);
-            if (h.paciente) pacientesUnicos.add(h.paciente);
-          });
-
-          pacientesUnicos.forEach(nombre => {
-            const li = document.createElement('li');
-            li.textContent = nombre;
-            listaPacientes.appendChild(li);
-          });
+          const btnD = document.createElement('button');
+          btnD.textContent = 'Eliminar cita';
+          btnD.onclick = () => mostrarConfirmacionEliminar(h._id, h.paciente, h.hora);
+          acciones.appendChild(btnD);
         } else {
-          cuerpo.innerHTML = `<tr><td colspan="3">${data.mensaje || 'Error al cargar horarios'}</td></tr>`;
+          const btnAdd = document.createElement('button');
+          btnAdd.textContent = 'Añadir cita';
+          btnAdd.onclick = () => abrirModal(h.hora);
+          acciones.appendChild(btnAdd);
         }
-      } catch (err) {
-        console.error(err);
-        document.getElementById('tablaHorarios').innerHTML = '<tr><td colspan="3">Error del servidor</td></tr>';
-      }
+
+        tbody.appendChild(fila);
+        if (h.paciente) pacientesSet.add(h.paciente);
+      });
+
+      pacientesSet.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p;
+        listaPacientes.appendChild(li);
+      });
     }
 
     async function abrirModal(hora) {
       horaGlobal = hora;
       document.getElementById('inputFecha').value = fechaGlobal;
-      document.getElementById('inputHora').value = horaGlobal;
-      document.getElementById('textoFechaHora').textContent = `${fechaGlobal} ${horaGlobal}`;
+      document.getElementById('inputHora').value = hora;
+      document.getElementById('textoFechaHora').textContent = `${fechaGlobal} ${hora}`;
       document.getElementById('mensajeCita').textContent = '';
 
-      // Obtener pacientes
-      const res = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
-      const data = await res.json();
-      const select = document.getElementById('selectPaciente');
-      select.innerHTML = '';
-      if (res.ok) {
-        data.pacientes.forEach(p => {
-          const option = document.createElement('option');
-          option.value = p._id;
-          option.textContent = p.nombre;
-          select.appendChild(option);
-        });
-      }
+      const [resPac, resJuegos] = await Promise.all([
+        fetch('/api/usuarios/mis-pacientes', { credentials: 'include' }),
+        fetch('/api/juegos', { credentials: 'include' })
+      ]);
 
-      document.getElementById('overlay').style.display = 'block';
+      const pacientes = await resPac.json();
+      const juegos = await resJuegos.json();
+
+      const selPac = document.getElementById('selectPaciente');
+      selPac.innerHTML = '';
+      pacientes.pacientes.forEach(p => {
+        selPac.innerHTML += `<option value="${p._id}">${p.nombre}</option>`;
+      });
+
+      const selJuegos = document.getElementById('selectJuegos');
+      selJuegos.innerHTML = '';
+      juegos.juegos.forEach(j => {
+        selJuegos.innerHTML += `<option value="${j._id}">${j.titulo}</option>`;
+      });
+
+      choicesJuegosCrear = inicializarChoices(selJuegos, choicesJuegosCrear);
       document.getElementById('modalCita').style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
     }
+
+    async function abrirModalEditar(citaParcial) {
+      // Obtener cita completa con juegos incluidos
+      const resCitaCompleta = await fetch(`/api/citas/${citaParcial._id}`, { credentials: 'include' });
+      const cita = await resCitaCompleta.json();
+      console.log('CITA COMPLETA:', cita);
+
+      const res = await fetch(`/api/citas/horarios-dia?fecha=${fechaGlobal}`, { credentials: 'include' });
+      const data = await res.json();
+
+      const selectHora = document.getElementById('editarHora');
+      selectHora.innerHTML = '';
+      data.horarios.forEach(h => {
+        if (!h.paciente || h.hora === cita.hora) {
+          selectHora.innerHTML += `<option value="${h.hora}" ${h.hora === cita.hora ? 'selected' : ''}>${h.hora}</option>`;
+        }
+      });
+
+      const [resPac, resJuegos] = await Promise.all([
+        fetch('/api/usuarios/mis-pacientes', { credentials: 'include' }),
+        fetch('/api/juegos', { credentials: 'include' })
+      ]);
+      const pacientes = await resPac.json();
+      const juegos = await resJuegos.json();
+
+      console.log('PACIENTES:', pacientes);
+      console.log('JUEGOS DISPONIBLES:', juegos);
+      console.log('JUEGOS ASIGNADOS A LA CITA:', cita.juegos);
+
+      const selPac = document.getElementById('editarSelectPaciente');
+      selPac.innerHTML = '';
+      pacientes.pacientes.forEach(p => {
+        selPac.innerHTML += `<option value="${p._id}" ${p._id === cita.paciente ? 'selected' : ''}>${p.nombre}</option>`;
+      });
+      selPac.disabled = true;
+
+      const selJuegos = document.getElementById('editarSelectJuegos');
+      selJuegos.innerHTML = '';
+      const juegosAsignados = cita.juegos || [];
+
+      juegos.juegos.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j._id;
+        opt.textContent = j.titulo;
+        if (juegosAsignados.includes(j._id)) {
+          opt.selected = true;
+        }
+        selJuegos.appendChild(opt);
+      });
+
+      choicesJuegosEditar = inicializarChoices(selJuegos, choicesJuegosEditar);
+
+      // Refuerza la selección visual (opcional, pero útil si Choices falla)
+      juegosAsignados.forEach(juegoId => {
+        choicesJuegosEditar.setChoiceByValue(juegoId);
+      });
+
+      document.getElementById('editarCitaId').value = cita._id;
+      document.getElementById('editarFecha').value = cita.fecha?.split('T')[0] || '';
+      document.getElementById('modalEditarCita').style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
+    }
+
+
+
 
     function cerrarModal() {
       document.getElementById('modalCita').style.display = 'none';
       document.getElementById('overlay').style.display = 'none';
     }
 
+    function cerrarModalEditar() {
+      document.getElementById('modalEditarCita').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+    function mostrarConfirmacionEliminar(id, nombre, hora) {
+      citaIdParaEliminar = id;
+      document.getElementById('textoConfirmacion').textContent = `¿Eliminar la cita de ${nombre} a las ${hora}?`;
+      document.getElementById('modalConfirmacion').style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
+    }
+
+    function cerrarModalConfirmacion() {
+      citaIdParaEliminar = null;
+      document.getElementById('modalConfirmacion').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+    document.getElementById('btnConfirmarEliminar').onclick = async () => {
+      if (!citaIdParaEliminar) return;
+      await fetch(`/api/citas/${citaIdParaEliminar}`, {
+        method: 'DELETE', credentials: 'include'
+      });
+      cerrarModalConfirmacion();
+      cargarHorarios();
+    };
+
     document.getElementById('formCita').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = e.target;
-      const paciente = form.paciente.value;
-      const fechaCompleta = `${fechaGlobal}T${horaGlobal}`;
+      const paciente = document.getElementById('selectPaciente').value;
+      const juegos = choicesJuegosCrear.getValue(true);
+      const msg = document.getElementById('mensajeCita');
+      if (!juegos.length) return msg.textContent = 'Debes seleccionar juegos.', msg.style.color = 'red';
 
       const res = await fetch('/api/citas/nueva', {
-        method: 'POST',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ paciente, fecha: fechaCompleta })
+        body: JSON.stringify({ paciente, fecha: `${fechaGlobal}T${horaGlobal}`, juegos })
       });
 
       const data = await res.json();
-      const mensaje = document.getElementById('mensajeCita');
       if (res.ok) {
-        mensaje.textContent = 'Cita creada correctamente.';
-        mensaje.style.color = 'green';
-        setTimeout(() => {
-          cerrarModal();
-          cargarHorarios();
-        }, 1000);
+        msg.textContent = 'Cita creada correctamente.'; msg.style.color = 'green';
+        setTimeout(() => { cerrarModal(); cargarHorarios(); }, 1000);
       } else {
-        mensaje.textContent = data.mensaje || 'Error al crear cita.';
-        mensaje.style.color = 'red';
+        msg.textContent = data.mensaje || 'Error al crear cita.'; msg.style.color = 'red';
       }
     });
 
+    document.getElementById('formEditarCita').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const citaId = document.getElementById('editarCitaId').value;
+      const fecha = document.getElementById('editarFecha').value;
+      const hora = document.getElementById('editarHora').value;
+      const juegos = choicesJuegosEditar.getValue(true);
+      const msg = document.getElementById('mensajeEditarCita');
+      if (!juegos.length) return msg.textContent = 'Debes seleccionar juegos.', msg.style.color = 'red';
+
+      const res = await fetch(`/api/citas/${citaId}`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha: `${fecha}T${hora}`, juegos })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        msg.textContent = 'Cita actualizada correctamente.'; msg.style.color = 'green';
+        setTimeout(() => { cerrarModalEditar(); cargarHorarios(); }, 1000);
+      } else {
+        msg.textContent = data.mensaje || 'Error al actualizar cita.'; msg.style.color = 'red';
+      }
+    });
+
+    cargarCabecera();
     cargarHorarios();
   </script>
 </body>
+
 </html>
