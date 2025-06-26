@@ -1,235 +1,302 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Panel del Profesional</title>
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-</head>
+  <meta charset="UTF-8">
+  <title>Panel del Profesional</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
+  <link rel="stylesheet" href="/styles/panel-profesional.css">
+</head>
 <body>
+  <div id="cabecera-container"></div>
+
+  <main id="contenidoProfesional" style="display: none;">
     <h1 id="bienvenida">Cargando...</h1>
 
-    <div id="contenidoProfesional" style="display: none;">
-        <h2>Herramientas del profesional</h2>
-        <ul>
-            <li><a href="#">Ver lista de pacientes</a></li>
-            <li><a href="#">Asignar actividades</a></li>
-            <li><a href="#">Revisar progreso</a></li>
-            <li><a href="/juegos.html"><button>Ver juegos</button></a></li>
-        </ul>
-
+    <div class="panel-container">
+      <div class="columna-izquierda">
         <h2>Calendario de citas</h2>
         <div id="calendarioCitas"></div>
-
         <button id="abrirModalCita">Crear nueva cita</button>
+      </div>
 
-        <div id="modalCita" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid black; z-index:1000;">
-            <h3>Nueva cita</h3>
-            <form id="formCita">
-                <label>Paciente:
-                    <select name="paciente" required id="selectPaciente"></select>
-                </label><br>
-                <label>Fecha:
-                    <input type="date" name="fechaDia" id="fechaDia" required>
-                </label><br>
-                <label>Hora:
-                    <select name="hora" id="horaDisponible" required></select>
-                </label><br>
-                <label>Juegos:
-                    <select id="selectJuegos" name="juegos" multiple></select>
-                </label><br><br>
-                <button type="submit">Guardar cita</button>
-                <button type="button" id="cerrarModalCita">Cancelar</button>
-            </form>
-            <p id="mensajeCita"></p>
-        </div>
-
+      <div class="columna-derecha">
         <h2>Mis pacientes</h2>
         <ul id="listaPacientes"></ul>
         <button id="abrirModalRegistrarPaciente">Registrar nuevo paciente</button>
+      </div>
     </div>
+  </main>
 
-    <button id="cerrarSesion">Cerrar sesión</button>
+  <!-- Modal: Registrar cita -->
+  <div id="modalCita" class="modal" style="display: none;">
+    <div class="modal-contenido">
+      <h3>Crear nueva cita</h3>
+      <form id="formCita">
+        <label>Paciente:
+          <select name="paciente" required id="selectPaciente"></select>
+        </label><br>
+        <label>Fecha:
+          <input type="date" name="fechaDia" id="fechaDia" required>
+        </label><br>
+        <label>Hora:
+          <select name="hora" id="horaDisponible" required></select>
+        </label><br>
+        <label>Juegos:
+          <select id="selectJuegos" name="juegos" multiple></select>
+        </label><br><br>
+        <button type="submit">Guardar cita</button>
+        <button type="button" id="cerrarModalCita">Cancelar</button>
+      </form>
+      <p id="mensajeCita"></p>
+    </div>
+  </div>
 
-    <script>
-        let choicesJuegos;
+  <!-- Modal: Registrar paciente -->
+  <div id="modalRegistrarPaciente" class="modal" style="display: none;">
+    <div class="modal-contenido">
+      <h3>Registrar nuevo paciente</h3>
+      <form id="formRegistrarPaciente">
+        <label>Nombre completo:
+          <input type="text" name="nombre" required>
+        </label><br>
+        <label>Nombre de usuario:
+          <input type="text" name="username" required>
+        </label><br>
+        <label>DNI:
+          <input type="text" name="dni" required>
+        </label><br>
+        <label>Email:
+          <input type="email" name="email" required>
+        </label><br>
+        <label>Contraseña:
+          <input type="password" name="password" required>
+        </label><br><br>
+        <button type="submit">Registrar paciente</button>
+        <button type="button" id="cerrarModalRegistrarPaciente">Cancelar</button>
+      </form>
+      <p id="mensajeRegistro"></p>
+    </div>
+  </div>
 
-        async function verificarSesion() {
-            const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
-            const data = await res.json();
+  <script>
+    let usuarioActual = null;
+    let choicesJuegos;
 
-            if (res.ok && data.usuario.rol === 'profesional') {
-                document.getElementById('bienvenida').textContent = `Bienvenido, Dr. ${data.usuario.username}`;
-                document.getElementById('contenidoProfesional').style.display = 'block';
-                obtenerPacientes();
-                cargarCalendario();
-            } else {
-                document.getElementById('bienvenida').textContent = 'Acceso denegado';
-            }
-        }
-
-        async function obtenerPacientes() {
-            const res = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
-            const data = await res.json();
-            const lista = document.getElementById('listaPacientes');
-            lista.innerHTML = '';
-            if (res.ok) {
-                data.pacientes.forEach(p => {
-                    const li = document.createElement('li');
-                    li.textContent = `${p.nombre} (DNI: ${p.dni})`;
-                    lista.appendChild(li);
-                });
-            }
-        }
-
-        async function cargarJuegos() {
-            const res = await fetch('/api/juegos', { credentials: 'include' });
-            const data = await res.json();
-            const select = document.getElementById('selectJuegos');
-            select.innerHTML = '';
-
-            if (res.ok) {
-                data.juegos.forEach(j => {
-                    const option = document.createElement('option');
-                    option.value = j._id;
-                    option.textContent = j.titulo;
-                    select.appendChild(option);
-                });
-
-                if (choicesJuegos) choicesJuegos.destroy();
-                choicesJuegos = new Choices('#selectJuegos', {
-                    removeItemButton: true,
-                    placeholder: true,
-                    placeholderValue: 'Seleccione juegos...'
-                });
-            }
-        }
-
-        async function cargarCalendario() {
-            const res = await fetch('/api/citas/mis-citas', { credentials: 'include' });
-            const data = await res.json();
-            const calendarEl = document.getElementById('calendarioCitas');
-            calendarEl.innerHTML = '';
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'es',
-                events: data.eventos || [],
-                dateClick: function (info) {
-                    const fecha = info.dateStr;
-                    window.open(`/ver-citas-dia.html?fecha=${fecha}`, '_blank');
-                }
-            });
-            calendar.render();
-        }
-
-        document.getElementById('abrirModalCita').addEventListener('click', async () => {
-            document.getElementById('modalCita').style.display = 'block';
-
-            const res = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
-            const data = await res.json();
-            const select = document.getElementById('selectPaciente');
-            select.innerHTML = '';
-            if (res.ok) {
-                data.pacientes.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = p._id;
-                    option.textContent = p.nombre;
-                    select.appendChild(option);
-                });
-            }
-
-            cargarJuegos();
-
-            const hoy = new Date().toISOString().split('T')[0];
-            const fechaInput = document.getElementById('fechaDia');
-            fechaInput.min = hoy;
-            fechaInput.value = hoy;
-            fechaInput.dispatchEvent(new Event('change'));
-        });
-
-        document.getElementById('cerrarModalCita').addEventListener('click', () => {
-            document.getElementById('modalCita').style.display = 'none';
-            document.getElementById('formCita').reset();
-            document.getElementById('mensajeCita').textContent = '';
-            if (choicesJuegos) choicesJuegos.clearStore();
-        });
-
-        document.getElementById('fechaDia').addEventListener('change', async (e) => {
-            const fecha = e.target.value;
-            const horaSelect = document.getElementById('horaDisponible');
-            if (!fecha) return;
-
-            const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
-            const data = await res.json();
-            horaSelect.innerHTML = '';
-
-            if (res.ok && data.horarios.length > 0) {
-                data.horarios.forEach(horario => {
-                    if (!horario.paciente) {
-                        const option = document.createElement('option');
-                        option.value = horario.hora;
-                        option.textContent = horario.hora;
-                        horaSelect.appendChild(option);
-                    }
-                });
-            } else {
-                const option = document.createElement('option');
-                option.disabled = true;
-                option.textContent = 'No hay horas disponibles';
-                horaSelect.appendChild(option);
-            }
-        });
-
-        document.getElementById('formCita').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const juegosSeleccionados = Array.from(document.getElementById('selectJuegos').selectedOptions).map(opt => opt.value);
-            const fechaCompleta = `${form.fechaDia.value}T${form.hora.value}`;
-            const cita = {
-                paciente: form.paciente.value,
-                fecha: fechaCompleta,
-                juegos: juegosSeleccionados
-            };
-
-            const res = await fetch('/api/citas/nueva', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(cita)
-            });
-
-            const data = await res.json();
-            const mensaje = document.getElementById('mensajeCita');
-            if (res.ok) {
-                mensaje.textContent = 'Cita creada correctamente.';
-                mensaje.style.color = 'green';
-                form.reset();
-                if (choicesJuegos) choicesJuegos.clearStore();
-                setTimeout(() => {
-                    document.getElementById('modalCita').style.display = 'none';
-                    mensaje.textContent = '';
-                    cargarCalendario();
-                }, 1500);
-            } else {
-                mensaje.textContent = data.mensaje || 'Error al crear cita.';
-                mensaje.style.color = 'red';
-            }
-        });
-
-        document.getElementById('cerrarSesion').addEventListener('click', async () => {
-            await fetch('/api/usuarios/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-            window.location.href = '/login.html';
-        });
-
+    /*
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('cabecera-container').innerHTML = html;
         verificarSesion();
-    </script>
-</body>
+      });
+      */
+    fetch('/partials/cabecera.html')
+    .then(res => res.text())
+    .then(html => {
+      const contenedor = document.getElementById('cabecera-container');
+      contenedor.innerHTML = html;
 
+      // Reactivar scripts que vienen inyectados
+      const scripts = contenedor.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        newScript.textContent = oldScript.textContent;
+        document.body.appendChild(newScript);
+        verificarSesion();
+      });
+    });
+    async function verificarSesion() {
+      const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok && data.usuario.rol === 'profesional') {
+        usuarioActual = data.usuario;
+        document.getElementById('bienvenida').textContent = `Bienvenido, Dr. ${usuarioActual.username}`;
+        document.getElementById('contenidoProfesional').style.display = 'block';
+        cargarCalendario();
+        obtenerPacientes();
+      } else {
+        document.getElementById('bienvenida').textContent = 'Acceso denegado';
+      }
+    }
+
+    async function obtenerPacientes() {
+      const res = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
+      const data = await res.json();
+      const lista = document.getElementById('listaPacientes');
+      lista.innerHTML = '';
+      data.pacientes.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.nombre} (DNI: ${p.dni})`;
+        lista.appendChild(li);
+      });
+    }
+
+    async function cargarCalendario() {
+      const res = await fetch('/api/citas/mis-citas', { credentials: 'include' });
+      const data = await res.json();
+      const calendar = new FullCalendar.Calendar(document.getElementById('calendarioCitas'), {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        events: data.eventos || [],
+        dateClick(info) {
+          const fecha = info.dateStr;
+          window.open(`/ver-citas-dia.html?fecha=${fecha}`, '_blank');
+        }
+      });
+      calendar.render();
+    }
+
+    document.getElementById('abrirModalRegistrarPaciente').addEventListener('click', () => {
+      document.getElementById('modalRegistrarPaciente').style.display = 'flex';
+    });
+
+    document.getElementById('cerrarModalRegistrarPaciente').addEventListener('click', () => {
+      document.getElementById('modalRegistrarPaciente').style.display = 'none';
+      document.getElementById('formRegistrarPaciente').reset();
+      document.getElementById('mensajeRegistro').textContent = '';
+    });
+
+    document.getElementById('formRegistrarPaciente').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const nuevoPaciente = {
+        nombre: form.nombre.value,
+        username: form.username.value,
+        dni: form.dni.value,
+        email: form.email.value,
+        password: form.password.value
+      };
+
+      const res = await fetch('/api/usuarios/registrar-paciente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(nuevoPaciente)
+      });
+
+      const data = await res.json();
+      const mensaje = document.getElementById('mensajeRegistro');
+      if (res.ok) {
+        mensaje.textContent = 'Paciente registrado correctamente.';
+        mensaje.style.color = 'green';
+        form.reset();
+        obtenerPacientes();
+        setTimeout(() => {
+          document.getElementById('modalRegistrarPaciente').style.display = 'none';
+          mensaje.textContent = '';
+        }, 1500);
+      } else {
+        mensaje.textContent = data.mensaje || 'Error al registrar paciente.';
+        mensaje.style.color = 'red';
+      }
+    });
+
+    document.getElementById('abrirModalCita').addEventListener('click', async () => {
+      document.getElementById('modalCita').style.display = 'flex';
+
+      const resPacientes = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
+      const dataPacientes = await resPacientes.json();
+      const select = document.getElementById('selectPaciente');
+      select.innerHTML = '';
+      dataPacientes.pacientes.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p._id;
+        opt.textContent = p.nombre;
+        select.appendChild(opt);
+      });
+
+      const resJuegos = await fetch('/api/juegos', { credentials: 'include' });
+      const dataJuegos = await resJuegos.json();
+      const selectJuegos = document.getElementById('selectJuegos');
+      selectJuegos.innerHTML = '';
+      dataJuegos.juegos.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j._id;
+        opt.textContent = j.titulo;
+        selectJuegos.appendChild(opt);
+      });
+
+      if (choicesJuegos) choicesJuegos.destroy();
+      choicesJuegos = new Choices('#selectJuegos', {
+        removeItemButton: true,
+        placeholder: true,
+        placeholderValue: 'Seleccione juegos...'
+      });
+
+      const hoy = new Date().toISOString().split('T')[0];
+      const fechaInput = document.getElementById('fechaDia');
+      fechaInput.min = hoy;
+      fechaInput.value = hoy;
+      fechaInput.dispatchEvent(new Event('change'));
+    });
+
+    document.getElementById('cerrarModalCita').addEventListener('click', () => {
+      document.getElementById('modalCita').style.display = 'none';
+      document.getElementById('formCita').reset();
+      document.getElementById('mensajeCita').textContent = '';
+      if (choicesJuegos) choicesJuegos.clearStore();
+    });
+
+    document.getElementById('fechaDia').addEventListener('change', async (e) => {
+      const fecha = e.target.value;
+      const horaSelect = document.getElementById('horaDisponible');
+      horaSelect.innerHTML = '';
+      const res = await fetch(`/api/citas/horarios-dia?fecha=${fecha}`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok && data.horarios.length > 0) {
+        data.horarios.forEach(h => {
+          if (!h.paciente) {
+            const opt = document.createElement('option');
+            opt.value = h.hora;
+            opt.textContent = h.hora;
+            horaSelect.appendChild(opt);
+          }
+        });
+      } else {
+        const opt = document.createElement('option');
+        opt.disabled = true;
+        opt.textContent = 'No hay horas disponibles';
+        horaSelect.appendChild(opt);
+      }
+    });
+
+    document.getElementById('formCita').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const cita = {
+        paciente: form.paciente.value,
+        fecha: `${form.fechaDia.value}T${form.hora.value}`,
+        juegos: Array.from(document.getElementById('selectJuegos').selectedOptions).map(o => o.value)
+      };
+
+      const res = await fetch('/api/citas/nueva', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(cita)
+      });
+
+      const data = await res.json();
+      const mensaje = document.getElementById('mensajeCita');
+      if (res.ok) {
+        mensaje.textContent = 'Cita creada correctamente.';
+        mensaje.style.color = 'green';
+        setTimeout(() => {
+          document.getElementById('modalCita').style.display = 'none';
+          form.reset();
+          mensaje.textContent = '';
+          if (choicesJuegos) choicesJuegos.clearStore();
+          cargarCalendario();
+        }, 1500);
+      } else {
+        mensaje.textContent = data.mensaje || 'Error al crear la cita.';
+        mensaje.style.color = 'red';
+      }
+    });
+  </script>
+</body>
 </html>

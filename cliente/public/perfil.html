@@ -4,18 +4,16 @@
 <head>
     <meta charset="UTF-8" />
     <title>Perfil</title>
-
     <link rel="stylesheet" href="/styles/perfil.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-
     <!-- Cabecera común -->
     <div id="cabecera-container"></div>
 
-    <!-- Contenido de la página -->
-    <main style="display: none;" id="contenidoPrincipal">
+    <!-- Contenido principal -->
+    <main id="contenidoPrincipal" style="display: none;">
         <h1 id="saludo">Cargando...</h1>
 
         <div class="bloque" id="datos-usuario">
@@ -27,7 +25,9 @@
 
         <div class="bloque" id="bloqueProgreso">
             <h2>Progreso por Áreas</h2>
-            <canvas id="graficoProgreso"></canvas>
+            <div class="grafico-container">
+                <canvas id="graficoProgreso"></canvas>
+            </div>
         </div>
 
         <div class="bloque" id="bloqueCitas">
@@ -39,58 +39,71 @@
     <script>
         let rolUsuario = null;
 
-        // Cargar cabecera y después contenido
-        fetch('/partials/cabecera.html')
-            .then(res => res.text())
-            .then(html => {
-                document.getElementById('cabecera-container').innerHTML = html;
+        async function cargarCabeceraYPerfil() {
+            try {
+                const resCabecera = await fetch('/partials/cabecera.html');
+                const htmlCabecera = await resCabecera.text();
+                document.getElementById('cabecera-container').innerHTML = htmlCabecera;
 
-                // Esperar a que cabecera esté en el DOM antes de seguir
-                return fetch('/api/usuarios/perfil', { credentials: 'include' });
-            })
-            .then(res => res.json())
-            .then(data => {
+                const resUsuario = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+                const data = await resUsuario.json();
                 const user = data.usuario;
+
                 if (!user) {
                     document.getElementById('saludo').textContent = "No autenticado";
                     return;
                 }
 
-                // Mostrar cabecera condicional
-                if (user.rol === 'profesional') {
-                    document.getElementById('linkProfesional').style.display = 'inline-block';
+                rolUsuario = user.rol;
+
+                // Mostrar botón de panel si profesional
+                if (rolUsuario === 'profesional') {
+                    const btnPanel = document.getElementById('btnPanel');
+                    if (btnPanel) btnPanel.style.display = 'inline-block';
                 }
 
-
-                // Mostrar contenido
-                document.getElementById('contenidoPrincipal').style.display = 'block';
-
-                rolUsuario = user.rol;
+                // Saludo y datos
                 document.getElementById('saludo').textContent = `Bienvenido, ${user.username}`;
                 document.getElementById('username').textContent = user.username;
                 document.getElementById('email').textContent = user.email;
                 document.getElementById('rol').textContent = user.rol;
 
+                // Mostrar contenido
+                document.getElementById('contenidoPrincipal').style.display = 'block';
+
                 if (rolUsuario === 'paciente') {
-                    cargarProgreso();
+                    await cargarProgreso();
                 } else {
                     document.getElementById('bloqueProgreso').style.display = 'none';
                 }
 
-                mostrarCitas();
+                if (rolUsuario === 'profesional') {
+                    const btnPanel = document.getElementById('btnPanel');
+                    const linkProfesional = document.getElementById('linkProfesional');
+                    if (btnPanel) btnPanel.style.display = 'inline-block';
+                    if (linkProfesional) linkProfesional.style.display = 'inline-block';
+                }
 
-                document.getElementById('cerrarSesion').addEventListener('click', async () => {
-                    await fetch('/api/usuarios/logout', {
-                        method: 'POST',
-                        credentials: 'include'
+
+                await mostrarCitas();
+
+                // Evento cerrar sesión
+                const btnCerrar = document.getElementById('cerrarSesion');
+                if (btnCerrar) {
+                    btnCerrar.addEventListener('click', async () => {
+                        await fetch('/api/usuarios/logout', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        window.location.href = '/login.html';
                     });
-                    window.location.href = '/login.html';
-                });
-            })
-            .catch(err => {
-                console.error('Error al cargar perfil:', err);
+                }
+
+            } catch (err) {
+                console.error('Error al cargar cabecera o perfil:', err);
                 document.getElementById('saludo').textContent = 'Error al cargar el perfil.';
-            });
+            }
+        }
 
         async function cargarProgreso() {
             try {
@@ -121,13 +134,14 @@
                         }]
                     },
                     options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
                         scales: {
                             y: {
                                 beginAtZero: true,
                                 max: 100
                             }
-                        },
-                        responsive: true
+                        }
                     }
                 });
             } catch (error) {
@@ -189,6 +203,8 @@
                 });
             }
         }
+
+        cargarCabeceraYPerfil();
     </script>
 </body>
 

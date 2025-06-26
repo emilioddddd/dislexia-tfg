@@ -22,7 +22,8 @@
 }
 
 .boton-activo {
-  background-color: #4CAF50; /* verde o el color que quieras */
+  background-color: #4CAF50;
   color: white;
   font-weight: bold;
 }
+

@@ -1,48 +1,49 @@
 <div class="cabecera">
-    <a href="/perfil.html"><button id="btnPerfil">Perfil</button></a>
-    <a href="/juegos.html"><button id="btnJuegos">Juegos</button></a>
-    <a href="/panel-profesional.html" id="linkProfesional" style="display:none;">
-        <button id="btnPanel">Panel Profesional</button>
-    </a>
-    <button id="cerrarSesion">Cerrar sesión</button>
+  <a href="/perfil.html"><button id="btnPerfil">Perfil</button></a>
+  <a href="/juegos.html"><button id="btnJuegos">Juegos</button></a>
+  <a href="/panel-profesional.html" id="linkProfesional" style="display: none;">
+    <button id="btnPanel">Panel Profesional</button>
+  </a>
+  <button id="cerrarSesion">Cerrar sesión</button>
 </div>
 
 <link rel="stylesheet" href="/styles/cabecera.css" />
 
 <script>
-    async function inicializarCabecera() {
-        try {
-            const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
-            const data = await res.json();
+  // Función que se ejecuta al cargar el contenido del DOM
+  async function inicializarCabecera() {
+    try {
+      const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+      const data = await res.json();
 
-            if (data.usuario?.rol === 'profesional') {
-                const linkPanel = document.getElementById('linkProfesional');
-                if (linkPanel) {
-                    linkPanel.style.display = 'inline-block';
-                }
-            }
+      // Si es profesional, mostrar botón de acceso al panel
+      if (data.usuario?.rol === 'profesional') {
+        document.getElementById('linkProfesional').style.display = 'inline-block';
+      }
 
-            const path = window.location.pathname;
-            if (path.includes('perfil.html')) {
-                document.getElementById('btnPerfil')?.classList.add('boton-activo');
-            } else if (path.includes('juegos.html')) {
-                document.getElementById('btnJuegos')?.classList.add('boton-activo');
-            } else if (path.includes('panel-profesional.html')) {
-                document.getElementById('btnPanel')?.classList.add('boton-activo');
-            }
-
-            document.getElementById('cerrarSesion')?.addEventListener('click', async () => {
-                await fetch('/api/usuarios/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/login.html';
-            });
-
-        } catch (error) {
-            console.error('Error en cabecera:', error);
-        }
+      // Resaltar botón activo según la página actual
+      const path = window.location.pathname;
+      if (path.includes('perfil.html')) {
+        document.getElementById('btnPerfil')?.classList.add('boton-activo');
+      } else if (path.includes('juegos.html')) {
+        document.getElementById('btnJuegos')?.classList.add('boton-activo');
+      } else if (path.includes('panel-profesional.html')) {
+        document.getElementById('btnPanel')?.classList.add('boton-activo');
+      }
+    } catch (err) {
+      console.error('Error al cargar la cabecera:', err);
     }
 
-    document.addEventListener('DOMContentLoaded', inicializarCabecera);
+    // Evento para cerrar sesión
+    document.getElementById('cerrarSesion')?.addEventListener('click', async () => {
+      await fetch('/api/usuarios/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      window.location.href = '/login.html';
+    });
+  }
+
+  // Ejecutar cuando se inyecta en la página
+  inicializarCabecera();
 </script>
