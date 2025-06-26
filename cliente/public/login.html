@@ -1,44 +1,65 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Login</title>
+  <meta charset="UTF-8" />
+  <title>Login - DislexiaApp</title>
+  <link rel="stylesheet" href="/styles/login.css">
 </head>
 <body>
-  <h1>Iniciar sesión</h1>
-<form id="formLogin">
-  <input type="email" id="email" placeholder="Correo" required><br>
-  <input type="password" id="password" placeholder="Contraseña" required><br>
-  <button type="submit">Entrar</button>
-</form>
 
-<p id="mensaje"></p>
+  <div class="cabecera">DislexiaApp</div>
 
-<script>
-  const form = document.getElementById('formLogin');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  <div class="contenedor-central">
+    <div class="columna izquierda">
+      <h2>Bienvenido a DislexiaApp</h2>
+      <p>
+        Nuestra plataforma está diseñada para apoyar a personas con dislexia mediante juegos interactivos, seguimiento profesional y herramientas de evaluación. Inicia sesión para comenzar tu camino hacia una lectura más fluida y segura.
+      </p>
+    </div>
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    <div class="columna derecha">
+      <h2>Iniciar sesión</h2>
+      <form id="formLogin">
+        <input type="email" id="email" placeholder="Correo electrónico" required />
+        <input type="password" id="password" placeholder="Contraseña" required />
+        <button type="submit">Entrar</button>
+      </form>
 
-    const res = await fetch('/api/usuarios/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      <p id="mensaje"></p>
+
+      <div class="registro">
+        ¿No tienes cuenta? <a href="/registro.html">Regístrate aquí</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('formLogin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const res = await fetch('/api/usuarios/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const destino = data.usuario.rol === 'profesional'
+          ? '/panel-profesional.html'
+          : '/perfil.html';
+        window.location.href = destino;
+      } else {
+        document.getElementById('mensaje').textContent = data.mensaje;
+      }
     });
-
-    const data = await res.json();
-
-    if (res.ok) {
-        window.location.href = '/perfil.html';
-      //document.getElementById('mensaje').textContent =
-        //`¡Hola, ${data.usuario.username}! Has iniciado sesión como ${data.usuario.rol}`;
-    } else {
-      document.getElementById('mensaje').textContent = data.mensaje;
-    }
-  });
-</script>
+  </script>
 
 </body>
 </html>
+

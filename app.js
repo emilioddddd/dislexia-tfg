@@ -52,7 +52,7 @@ app.use('/api/resultados', rutasProgreso);
 // Ruta básica
 app.get('/', (req, res) => {
   //res.send('Bienvenido a la aplicación de dislexia');
-  res.sendFile(path.join(__dirname, 'cliente/public/index.html'));
+  res.sendFile(path.join(__dirname, 'cliente/public/login.html'));
 });
 
 // Arrancar el servidor

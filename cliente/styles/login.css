@@ -1,0 +1,109 @@
+/* Estilo para login.html */
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f0f2f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+}
+
+.cabecera {
+  width: 100%;
+  background-color: #35424a;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.contenedor-central {
+  margin-top: 80px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+  width: 90%;
+  overflow: hidden;
+}
+
+.columna {
+  padding: 40px 30px;
+}
+
+.columna.izquierda {
+  background-color: #f7f9fc;
+  flex: 1;
+}
+
+.columna.derecha {
+  flex: 1;
+}
+
+.columna h2 {
+  font-size: 24px;
+  color: #35424a;
+  margin-bottom: 20px;
+}
+
+.columna p {
+  font-size: 16px;
+  color: #444;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+input {
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 15px;
+}
+
+button {
+  padding: 12px;
+  background-color: #35424a;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #2a373d;
+}
+
+#mensaje {
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.registro {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.registro a {
+  color: #35424a;
+  text-decoration: underline;
+}
+
+@media screen and (min-width: 768px) {
+  .contenedor-central {
+    flex-direction: row;
+  }
+}
