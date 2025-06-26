@@ -1,0 +1,48 @@
+<div class="cabecera">
+    <a href="/perfil.html"><button id="btnPerfil">Perfil</button></a>
+    <a href="/juegos.html"><button id="btnJuegos">Juegos</button></a>
+    <a href="/panel-profesional.html" id="linkProfesional" style="display:none;">
+        <button id="btnPanel">Panel Profesional</button>
+    </a>
+    <button id="cerrarSesion">Cerrar sesión</button>
+</div>
+
+<link rel="stylesheet" href="/styles/cabecera.css" />
+
+<script>
+    async function inicializarCabecera() {
+        try {
+            const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+            const data = await res.json();
+
+            if (data.usuario?.rol === 'profesional') {
+                const linkPanel = document.getElementById('linkProfesional');
+                if (linkPanel) {
+                    linkPanel.style.display = 'inline-block';
+                }
+            }
+
+            const path = window.location.pathname;
+            if (path.includes('perfil.html')) {
+                document.getElementById('btnPerfil')?.classList.add('boton-activo');
+            } else if (path.includes('juegos.html')) {
+                document.getElementById('btnJuegos')?.classList.add('boton-activo');
+            } else if (path.includes('panel-profesional.html')) {
+                document.getElementById('btnPanel')?.classList.add('boton-activo');
+            }
+
+            document.getElementById('cerrarSesion')?.addEventListener('click', async () => {
+                await fetch('/api/usuarios/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/login.html';
+            });
+
+        } catch (error) {
+            console.error('Error en cabecera:', error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', inicializarCabecera);
+</script>

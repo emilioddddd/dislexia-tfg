@@ -27,8 +27,11 @@ app.use(session({
 // Middleware para poder recibir JSON
 app.use(express.json());
 
-// Servir archivos estáticos (HTML, CSS, JS) desde cliente/public
+// Servir los HTML desde cliente/public
 app.use(express.static(path.join(__dirname, 'cliente/public')));
+app.use('/partials', express.static(path.join(__dirname, 'cliente/partials')));
+// Sirve los estilos desde /cliente/styles
+app.use('/styles', express.static(path.join(__dirname, 'cliente/styles')));
 
 // Rutas API
 const rutasUsuarios = require('./servidor/routes/usuarios');

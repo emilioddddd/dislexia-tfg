@@ -1,0 +1,70 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f5f7fa;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 20px;
+  color: #333;
+}
+
+/* Bloques generales */
+.bloque {
+  width: 95%;
+  margin: 20px auto;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.bloque h2 {
+  margin-top: 0;
+  color: #35424a;
+}
+
+#bloqueCitas {
+  width: 95%;
+  margin: 20px auto;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Gráfico responsivo */
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tabla de citas */
+#bloqueCitas table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+#bloqueCitas table, #bloqueCitas th, #bloqueCitas td {
+  border: 1px solid #ccc;
+}
+
+#bloqueCitas th, #bloqueCitas td {
+  padding: 10px;
+  text-align: left;
+}
+
+#bloqueCitas tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+
+#graficoProgreso {
+  max-width: 900px;  
+  width: 100%;
+  margin: 0 auto;
+  display: block;
+}

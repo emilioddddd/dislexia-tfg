@@ -1,0 +1,28 @@
+.cabecera {
+  background-color: #35424a;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cabecera button {
+  background-color: #ffffff;
+  color: #35424a;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.cabecera button:hover {
+  background-color: #ddd;
+}
+
+.boton-activo {
+  background-color: #4CAF50; /* verde o el color que quieras */
+  color: white;
+  font-weight: bold;
+}
