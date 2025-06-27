@@ -1,30 +1,56 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Ahorcado Adaptado</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; }
-    .letra { font-size: 2em; margin: 0 5px; border-bottom: 2px solid #000; width: 30px; display: inline-block; }
-    #teclado button { margin: 5px; padding: 10px; font-size: 1em; }
-    #estado { margin-top: 20px; font-weight: bold; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/ahorcado.css">
 </head>
+
 <body>
-  <h1>Ahorcado Adaptado</h1>
-  <p><strong>Pista:</strong> <span id="pista"></span></p>
-  <div id="palabra"></div>
-  <div id="teclado"></div>
-  <p id="estado"></p>
+
+  <div id="cabecera-container"></div>
+
+  <div class="contenedor">
+    <h1>Ahorcado Adaptado</h1>
+    <p class="pista"><strong>Pista:</strong> <span id="pista"></span></p>
+    <div id="palabra"></div>
+    <div id="teclado"></div>
+    <p id="estado"></p>
+
+    <div class="acciones">
+      <button onclick="iniciarJuego()">🔄 Reiniciar</button>
+      <a href="javascript:history.back()">🔙 Atrás</a>
+    </div>
+  </div>
 
   <script>
+    let seleccionada, letrasCorrectas, letrasIncorrectas, intentos, maxIntentos = 6, inicio;
+
     const palabras = [
       { palabra: "guitarra", pista: "Instrumento musical de cuerdas" },
       { palabra: "ventana", pista: "Está en la pared y deja pasar la luz" },
       { palabra: "escuela", pista: "Lugar donde aprendes" }
     ];
 
-    let seleccionada, letrasCorrectas, letrasIncorrectas, intentos, maxIntentos = 6, inicio;
+    async function cargarCabecera() {
+      try {
+        const res = await fetch('/partials/cabecera.html');
+        const html = await res.text();
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
+        const scripts = contenedor.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      } catch (err) {
+        console.error("Error cargando cabecera:", err);
+      }
+    }
 
     function iniciarJuego() {
       const elegida = palabras[Math.floor(Math.random() * palabras.length)];
@@ -34,9 +60,9 @@
       letrasIncorrectas = [];
       intentos = 0;
       inicio = new Date();
+      document.getElementById("estado").textContent = "";
       mostrarPalabra();
       crearTeclado();
-      document.getElementById("estado").textContent = "";
     }
 
     function mostrarPalabra() {
@@ -45,7 +71,14 @@
       for (let letra of seleccionada) {
         const span = document.createElement("span");
         span.className = "letra";
-        span.textContent = letrasCorrectas.includes(letra) ? letra : "";
+        if (letrasCorrectas.includes(letra)) {
+          span.textContent = letra;
+        } else if (letrasIncorrectas.includes(letra)) {
+          span.textContent = letra;
+          span.classList.add("fallida");
+        } else {
+          span.textContent = "";
+        }
         contenedor.appendChild(span);
       }
     }
@@ -66,13 +99,16 @@
       boton.disabled = true;
       if (seleccionada.includes(letra)) {
         letrasCorrectas.push(letra);
+        boton.classList.add('acierto');
       } else {
         letrasIncorrectas.push(letra);
         intentos++;
+        boton.classList.add('fallo'); 
       }
       mostrarPalabra();
       comprobarFin();
     }
+
 
     function comprobarFin() {
       const estado = document.getElementById("estado");
@@ -109,12 +145,15 @@
             fecha: new Date().toISOString()
           }
         })
-      }).then(res => res.json()).then(data => {
-        console.log("Resultado enviado:", data);
-      }).catch(err => console.error("Error:", err));
+      })
+        .then(res => res.json())
+        .then(data => console.log("Resultado enviado:", data))
+        .catch(err => console.error("Error al enviar resultado:", err));
     }
 
+    cargarCabecera();
     iniciarJuego();
   </script>
 </body>
+
 </html>

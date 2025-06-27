@@ -3,57 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <title>Comprensión Lectora</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #fdf6e3;
-      padding: 20px;
-      line-height: 1.6;
-    }
-
-    .texto, .preguntas {
-      max-width: 800px;
-      background-color: white;
-      padding: 20px;
-      margin: 20px auto;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h1, h2 {
-      text-align: center;
-    }
-
-    button {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-
-    .opcion {
-      margin: 10px 0;
-    }
-
-    .resultado {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-  </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../styles/comprension.css">
 </head>
 <body>
+  <div id="cabecera-container"></div>
+
   <h1>Comprensión Lectora</h1>
 
-  <div class="texto" id="bloqueTexto">
+  <div class="contenedor oculto" id="bloqueTexto">
     <h2>Lee el siguiente texto</h2>
     <p id="texto">
       Carla tiene una gata llamada Nube. Cada mañana, Nube salta a la cama para despertar a Carla con suaves maullidos. Luego se sientan juntas a mirar por la ventana cómo salen los primeros rayos del sol.
     </p>
-    <button id="empezarPreguntas">He leído el texto</button>
+    <button class="boton-central" id="empezarPreguntas">He leído el texto</button>
   </div>
 
-  <div class="preguntas" id="bloquePreguntas" style="display:none;">
+  <div class="contenedor oculto" id="bloquePreguntas">
     <h2>Preguntas</h2>
     <form id="formPreguntas">
       <div class="pregunta">
@@ -77,25 +43,58 @@
         <label class="opcion"><input type="radio" name="p3" value="incorrecto"> La lluvia</label>
       </div>
 
-      <button type="submit">Enviar respuestas</button>
+      <button class="boton-central" type="submit">Enviar respuestas</button>
     </form>
 
     <div id="resultado" class="resultado"></div>
+
+    <div class="botones-finales oculto" id="botonesExtra">
+      <button onclick="reiniciar()">🔁 Reiniciar</button>
+      <button onclick="window.location.href='/juegos.html'">🏠 Volver a Juegos</button>
+    </div>
+  </div>
+
+  <div class="contenedor" id="inicio">
+    <h2>¿Listo para comenzar?</h2>
+    <p>Este ejercicio pondrá a prueba tu capacidad de comprensión lectora. Pulsa el botón para comenzar.</p>
+    <button class="boton-central" id="btnIniciar">Iniciar lectura</button>
   </div>
 
   <script>
-    let inicioLectura = Date.now();
+    let inicioLectura = null;
 
-    document.getElementById('empezarPreguntas').addEventListener('click', () => {
-      document.getElementById('bloqueTexto').style.display = 'none';
-      document.getElementById('bloquePreguntas').style.display = 'block';
+    // Cabecera
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
+        const scripts = contenedor.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement('script');
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      });
+
+    // Iniciar lectura
+    document.getElementById('btnIniciar').addEventListener('click', () => {
+      document.getElementById('inicio').classList.add('oculto');
+      document.getElementById('bloqueTexto').classList.remove('oculto');
+      inicioLectura = Date.now();
     });
 
+    // Ir a preguntas
+    document.getElementById('empezarPreguntas').addEventListener('click', () => {
+      document.getElementById('bloqueTexto').classList.add('oculto');
+      document.getElementById('bloquePreguntas').classList.remove('oculto');
+    });
+
+    // Enviar respuestas
     document.getElementById('formPreguntas').addEventListener('submit', async function (e) {
       e.preventDefault();
 
       const tiempoLecturaSegundos = Math.floor((Date.now() - inicioLectura) / 1000);
-
       const respuestas = new FormData(e.target);
       let aciertos = 0;
 
@@ -104,9 +103,10 @@
       }
 
       const totalPreguntas = 3;
+      document.getElementById('resultado').textContent =
+        `✅ Has acertado ${aciertos} de ${totalPreguntas} preguntas en ${tiempoLecturaSegundos} segundos.`;
 
-      document.getElementById('resultado').textContent = 
-        `Has acertado ${aciertos} de ${totalPreguntas} preguntas en ${tiempoLecturaSegundos} segundos.`;
+      document.getElementById('botonesExtra').classList.remove('oculto');
 
       // Guardar resultado
       try {
@@ -127,6 +127,10 @@
         console.error('Error al guardar resultado:', err);
       }
     });
+
+    function reiniciar() {
+      window.location.reload();
+    }
   </script>
 </body>
 </html>
