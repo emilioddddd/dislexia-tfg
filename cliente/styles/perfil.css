@@ -1,70 +1,91 @@
+/* === Reset & base === */
 body {
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f5f7fa;
-}
-
-h1 {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f4f7fa;
+  color: #2c3e50;
   text-align: center;
-  margin-top: 20px;
-  color: #333;
 }
 
-/* Bloques generales */
+h1, h2 {
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* === Cabecera === */
+#cabecera-container {
+  margin-bottom: 40px;
+}
+
+/* === Bloques principales === */
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 .bloque {
-  width: 95%;
-  margin: 20px auto;
-  background-color: #ffffff;
-  padding: 20px;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.bloque h2 {
-  margin-top: 0;
-  color: #35424a;
-}
-
-#bloqueCitas {
-  width: 95%;
-  margin: 20px auto;
-  background-color: #ffffff;
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-/* Gráfico responsivo */
-canvas {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Tabla de citas */
-#bloqueCitas table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-#bloqueCitas table, #bloqueCitas th, #bloqueCitas td {
-  border: 1px solid #ccc;
-}
-
-#bloqueCitas th, #bloqueCitas td {
-  padding: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   text-align: left;
 }
 
-#bloqueCitas tr:nth-child(even) {
-  background-color: #f2f2f2;
+.bloque h2 {
+  color: #34495e;
+  margin-bottom: 12px;
 }
 
+/* === Datos del usuario === */
+#datos-usuario p {
+  margin: 6px 0;
+  font-size: 1rem;
+}
 
-#graficoProgreso {
-  max-width: 900px;  
+/* === Gráfico === */
+.grafico-container {
   width: 100%;
-  margin: 0 auto;
-  display: block;
+  height: 300px;
+  margin-top: 10px;
+}
+
+/* === Lista de citas === */
+#listaCitas > div {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #ecf0f1;
+  border-radius: 8px;
+}
+
+#listaCitas table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#listaCitas th,
+#listaCitas td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+#listaCitas h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .grafico-container {
+    height: 250px;
+  }
+
+  #listaCitas table {
+    font-size: 0.9rem;
+  }
 }
