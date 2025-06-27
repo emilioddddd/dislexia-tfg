@@ -162,11 +162,15 @@
           btnD.onclick = () => mostrarConfirmacionEliminar(h._id, h.paciente, h.hora);
           acciones.appendChild(btnD);
         } else {
-          const btnAdd = document.createElement('button');
-          btnAdd.textContent = 'Añadir cita';
-          btnAdd.onclick = () => abrirModal(h.hora);
-          acciones.appendChild(btnAdd);
+          const hoy = new Date().toISOString().split('T')[0];
+          if (fechaGlobal >= hoy) {
+            const btnAdd = document.createElement('button');
+            btnAdd.textContent = 'Añadir cita';
+            btnAdd.onclick = () => abrirModal(h.hora);
+            acciones.appendChild(btnAdd);
+          }
         }
+
 
         tbody.appendChild(fila);
         if (h.paciente) pacientesSet.add(h.paciente);
@@ -180,6 +184,12 @@
     }
 
     async function abrirModal(hora) {
+      const hoy = new Date().toISOString().split('T')[0];
+      if (fechaGlobal < hoy) {
+        alert('No se pueden añadir citas en fechas pasadas.');
+        return;
+      }
+
       horaGlobal = hora;
       document.getElementById('inputFecha').value = fechaGlobal;
       document.getElementById('inputHora').value = hora;
@@ -210,6 +220,7 @@
       document.getElementById('modalCita').style.display = 'block';
       document.getElementById('overlay').style.display = 'block';
     }
+
 
     async function abrirModalEditar(citaParcial) {
       // Obtener cita completa con juegos incluidos
@@ -268,7 +279,30 @@
       });
 
       document.getElementById('editarCitaId').value = cita._id;
-      document.getElementById('editarFecha').value = cita.fecha?.split('T')[0] || '';
+      document.getElementById('editarFecha').value = cita.fecha ? cita.fecha.split('T')[0] : '';
+
+      // Establecer la fecha mínima a hoy (para evitar seleccionar días anteriores)
+      const hoyISO = new Date().toISOString().split('T')[0];
+      document.getElementById('editarFecha').setAttribute('min', hoyISO);
+
+      // --- DESHABILITAR CAMPOS SI LA FECHA ES PASADA ---
+      const fechaCita = new Date(cita.fecha.split('T')[0]);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0); // normalizamos la hora
+      const esPasada = fechaCita < hoy;
+
+      document.getElementById('editarFecha').disabled = esPasada;
+      document.getElementById('editarHora').disabled = esPasada;
+      document.getElementById('editarSelectJuegos').disabled = esPasada;
+
+      if (choicesJuegosEditar) {
+        if (esPasada) {
+          choicesJuegosEditar.disable();
+        } else {
+          choicesJuegosEditar.enable();
+        }
+      }
+
       document.getElementById('modalEditarCita').style.display = 'block';
       document.getElementById('overlay').style.display = 'block';
     }

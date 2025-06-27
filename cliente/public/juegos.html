@@ -1,97 +1,160 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>Juegos para Dislexia</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f0f8ff;
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-
-    .juego {
-      background-color: #fff;
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin: 15px auto;
-      border-radius: 8px;
-      max-width: 600px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .juego h3 {
-      margin: 0 0 10px;
-    }
-
-    .juego p {
-      margin: 5px 0;
-    }
-
-    .juego button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .juego button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/juegos.css">
 </head>
+
 <body>
+  <div id="cabecera-container"></div>
 
   <h1>Actividades y Juegos</h1>
-  <div id="lista-juegos"></div>
+
+  <div class="bloque">
+    <h2>🎯 Juegos Recomendados</h2>
+    <div class="juegos-grid" id="juegos-recomendados"></div>
+  </div>
+
+  <div class="bloque">
+    <h2>📚 Juegos por Área</h2>
+    <div id="juegos-por-area"></div>
+  </div>
 
   <script>
+    let usuarioActual = null;
+    let choicesJuegos;
+
+    /*
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('cabecera-container').innerHTML = html;
+        verificarSesion();
+      });
+      */
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
+
+        // Reactivar scripts que vienen inyectados
+        const scripts = contenedor.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+          verificarSesion();
+        });
+      });
+    async function verificarSesion() {
+      const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok && data.usuario.rol === 'profesional') {
+        usuarioActual = data.usuario;
+        document.getElementById('bienvenida').textContent = `Bienvenido, Dr. ${usuarioActual.username}`;
+        document.getElementById('contenidoProfesional').style.display = 'block';
+        cargarCalendario();
+        obtenerPacientes();
+      } else {
+        document.getElementById('bienvenida').textContent = 'Acceso denegado';
+      }
+    }
+
+    async function obtenerProgreso() {
+      try {
+        const res = await fetch('/api/resultados/progreso', { credentials: 'include' });
+        const data = await res.json();
+        return data;
+      } catch (err) {
+        console.error('Error al obtener progreso:', err);
+        return {};
+      }
+    }
+
     async function cargarJuegos() {
       try {
-        const res = await fetch('/api/juegos', {
-          credentials: 'include' // necesario para sesiones
-        });
+        const [resJuegos, progreso] = await Promise.all([
+          fetch('/api/juegos', { credentials: 'include' }),
+          obtenerProgreso()
+        ]);
 
-        const data = await res.json();
-        console.log('Respuesta de /api/juegos:', data);
-
+        const data = await resJuegos.json();
         const juegos = Array.isArray(data) ? data : data.juegos || [];
 
         if (!juegos.length) {
-          document.getElementById('lista-juegos').innerHTML = '<p>No hay juegos disponibles.</p>';
+          document.getElementById('juegos-recomendados').innerHTML = '<p>No hay juegos disponibles.</p>';
+          document.getElementById('juegos-por-area').innerHTML = '';
           return;
         }
 
-        const contenedor = document.getElementById('lista-juegos');
-        contenedor.innerHTML = '';
+        // Mostrar juegos recomendados
+        const peoresAreas = Object.entries(progreso)
+          .sort(([, a], [, b]) => a - b)
+          .slice(0, 2)
+          .map(([area]) => area.toLowerCase());
 
-        juegos.forEach(juego => {
-          const div = document.createElement('div');
-          div.className = 'juego';
-          div.innerHTML = `
-            <h3>${juego.titulo}</h3>
-            <p>${juego.descripcion}</p>
-            <p><strong>Áreas evaluadas:</strong> ${juego.areas ? juego.areas.join(', ') : 'N/A'}</p>
-            <a href="${juego.ruta}"><button>Jugar</button></a>
-          `;
-          contenedor.appendChild(div);
+        const recomendados = juegos.filter(j => j.areas?.some(a => peoresAreas.includes(a.toLowerCase())));
+        const contenedorRecomendados = document.getElementById('juegos-recomendados');
+        contenedorRecomendados.innerHTML = recomendados.length
+          ? recomendados.map(j => crearHTMLJuego(j)).join('')
+          : '<p>No hay juegos recomendados actualmente.</p>';
+
+        // Juegos por área
+        const juegosPorArea = {};
+        juegos.forEach(j => {
+          (j.areas || []).forEach(area => {
+            if (!juegosPorArea[area]) juegosPorArea[area] = [];
+            juegosPorArea[area].push(j);
+          });
         });
+
+        const contenedorAreas = document.getElementById('juegos-por-area');
+        contenedorAreas.innerHTML = Object.entries(juegosPorArea).map(([area, juegos]) => `
+          <div class="area-seccion">
+            <h3>${obtenerIconoArea(area)} ${area.charAt(0).toUpperCase() + area.slice(1)}</h3>
+            <div class="juegos-grid">
+              ${juegos.map(j => crearHTMLJuego(j)).join('')}
+            </div>
+          </div>
+        `).join('');
+
       } catch (err) {
         console.error('Error al cargar juegos:', err);
-        document.getElementById('lista-juegos').innerHTML = '<p style="color:red">Error al cargar los juegos. Intenta más tarde.</p>';
+        document.getElementById('juegos-recomendados').innerHTML = '<p style="color:red">Error al cargar los juegos.</p>';
       }
     }
+
+    function crearHTMLJuego(juego) {
+      return `
+        <div class="juego">
+          <h3>${juego.titulo}</h3>
+          <p>${juego.descripcion}</p>
+          <p><strong>Áreas evaluadas:</strong> ${juego.areas ? juego.areas.join(', ') : 'N/A'}</p>
+          <a href="${juego.ruta}"><button>Jugar</button></a>
+        </div>
+      `;
+    }
+
+    function obtenerIconoArea(area) {
+      const iconos = {
+        'velocidad': '⚡',
+        'precisión': '🎯',
+        'comprensión': '📖',
+        'escritura': '✍️',
+        'ortografía': '🔠',
+        'proceso fonológico': '🔊'
+      };
+      return iconos[area.toLowerCase()] || '🧩';
+    }
+
 
     cargarJuegos();
   </script>
 
 </body>
+
 </html>

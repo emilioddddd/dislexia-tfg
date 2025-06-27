@@ -25,7 +25,7 @@ const juegos = [
     descripcion: 'Relaciona pares de palabras visualmente parecidas.',
     tipo: 'memoria',
     ruta: '/juegos/memoria.html',
-    areas: ['velocidad', 'precisión', 'atención']
+    areas: ['velocidad', 'precisión']
   },
   {
     titulo: 'Ordenar las letras',
