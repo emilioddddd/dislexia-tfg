@@ -1,49 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Imagen y Palabra</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      text-align: center;
-      padding: 20px;
-    }
-    #juego {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: 0 auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    img {
-      width: 200px;
-      height: auto;
-      margin: 20px 0;
-    }
-    .opciones button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-    #resultado {
-      margin-top: 20px;
-      font-size: 18px;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/imagen-palabra.css">
 </head>
-
 <body>
-  <div id="juego">
+
+  <div id="cabecera-container"></div>
+
+  <div class="contenedor">
     <h1>Imagen y Palabra</h1>
     <p id="progreso">Pregunta 1 de 5</p>
-    <img id="imagen" src="" alt="imagen">
+    <img id="imagen" src="" alt="imagen ilustrativa">
     <div class="opciones" id="opciones"></div>
     <p id="feedback"></p>
     <div id="resultado" style="display:none;"></div>
+    <div class="botones-finales">
+      <button onclick="reiniciar()">🔁 Reiniciar</button>
+      <a href="javascript:history.back()">🔙 Atrás</a>
+    </div>
   </div>
 
   <script>
@@ -89,18 +66,20 @@
       q.opciones.forEach(op => {
         const btn = document.createElement('button');
         btn.textContent = op;
-        btn.onclick = () => comprobar(op);
+        btn.onclick = () => comprobar(op, btn);
         document.getElementById('opciones').appendChild(btn);
       });
     }
 
-    function comprobar(eleccion) {
+    function comprobar(eleccion, botonPulsado) {
       intentos++;
       const correcta = preguntas[actual].correcta;
+
       if (eleccion === correcta) {
         aciertos++;
         document.getElementById('feedback').textContent = '¡Correcto!';
         actual++;
+        botonPulsado.classList.add('acierto');
         setTimeout(() => {
           document.getElementById('feedback').textContent = '';
           if (actual < preguntas.length) {
@@ -108,9 +87,10 @@
           } else {
             finalizar();
           }
-        }, 1000);
+        }, 800);
       } else {
         document.getElementById('feedback').textContent = 'Intenta de nuevo';
+        botonPulsado.classList.add('fallo');
       }
     }
 
@@ -119,6 +99,7 @@
       document.getElementById('opciones').innerHTML = '';
       document.getElementById('progreso').style.display = 'none';
       document.getElementById('imagen').style.display = 'none';
+      document.getElementById('feedback').style.display = 'none';
       document.getElementById('resultado').style.display = 'block';
       document.getElementById('resultado').innerHTML = `
         <p>Juego finalizado.</p>
@@ -130,6 +111,7 @@
       fetch('/api/resultados', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           juegoTipo: 'imagen-palabra',
           datos: { aciertos, intentos, tiempo }
@@ -137,8 +119,30 @@
       }).then(() => console.log('Resultado enviado'));
     }
 
+    function reiniciar() {
+      location.reload();
+    }
+
+    // Cargar cabecera
+    async function cargarCabecera() {
+      try {
+        const res = await fetch('/partials/cabecera.html');
+        const html = await res.text();
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
+        const scripts = contenedor.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      } catch (err) {
+        console.error("Error cargando cabecera:", err);
+      }
+    }
+    
+    cargarCabecera();
     cargarPregunta();
   </script>
 </body>
-
 </html>
