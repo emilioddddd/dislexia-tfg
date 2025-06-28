@@ -1,0 +1,126 @@
+* {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f2f4f7;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    #cabecera-container {
+      margin-bottom: 20px;
+    }
+
+    .contenedor {
+      max-width: 800px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    #palabra-deshordenada {
+      font-size: 1.5rem;
+      color: #34495e;
+      margin-bottom: 10px;
+    }
+
+    #letras-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .letra {
+      padding: 12px 18px;
+      font-size: 1.5rem;
+      border: 2px solid #3498db;
+      border-radius: 10px;
+      background-color: #ecf0f1;
+      cursor: move;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+
+    .letra:hover {
+      background-color: #d6eaf8;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #mensaje {
+      font-weight: 600;
+      margin-top: 20px;
+      font-size: 1.1rem;
+    }
+
+.botones-finales button {
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .botones-finales a {
+        background-color: #95a5a6;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .botones-finales button:hover {
+        background-color: #27ae60;
+    }
+
+    .botones-finales a:hover {
+        background-color: #7f8c8d;
+    }
+
+    button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
