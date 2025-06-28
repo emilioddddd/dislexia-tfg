@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const Usuario = require('../models/Usuario');
 const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
+const requiereAuth = require('../middleware/requiereAuth');
 
 
 // Simulación de base de datos
@@ -135,6 +136,48 @@ router.post('/registrar-paciente', requiereRol('profesional'), async (req, res) 
     res.status(500).json({ mensaje: 'Error interno al registrar paciente' });
   }
 });
+
+router.get('/:id', requiereAuth, async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id).select('username email rol');
+    if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+
+    res.json({ usuario });
+  } catch (error) {
+    console.error('Error al obtener usuario por ID:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+});
+
+// Obtener perfil de un paciente por ID (solo para profesionales)
+router.get('/paciente/:id', async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id).select('-password');
+    if (!usuario || usuario.rol !== 'paciente') {
+      return res.status(404).json({ mensaje: 'Paciente no encontrado' });
+    }
+    res.json({ usuario });
+  } catch (err) {
+    console.error('Error en /paciente/:id', err);
+    res.status(500).json({ mensaje: 'Error al obtener paciente' });
+  }
+});
+
+
+
+router.get('/progreso/:pacienteId', async (req, res) => {
+  const pacienteId = req.params.pacienteId;
+  const resultados = await Resultado.find({ paciente: pacienteId });
+  // Calcula y devuelve métricas igual que en /progreso
+});
+
+router.get('/mis-citas-paciente/:id', async (req, res) => {
+  const citas = await Cita.find({ paciente: req.params.id }).populate('juegos').lean();
+  // Formatea como en /mis-citas
+});
+
+
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 

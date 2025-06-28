@@ -9,10 +9,8 @@
 </head>
 
 <body>
-    <!-- Cabecera común -->
     <div id="cabecera-container"></div>
 
-    <!-- Contenido principal -->
     <main id="contenidoPrincipal" style="display: none;">
         <h1 id="saludo">Cargando...</h1>
 
@@ -31,83 +29,110 @@
         </div>
 
         <div class="bloque" id="bloqueCitas">
-            <h2>Proximas citas</h2>
+            <h2>Próximas citas</h2>
             <ul id="listaCitas"></ul>
         </div>
     </main>
 
     <script>
-        let rolUsuario = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const idPaciente = urlParams.get('paciente');
+        let usuarioActual = null;
+        let pacienteActual = null;
 
         async function cargarCabeceraYPerfil() {
             try {
-                const resCabecera = await fetch('/partials/cabecera.html');
-                const htmlCabecera = await resCabecera.text();
-                document.getElementById('cabecera-container').innerHTML = htmlCabecera;
+                // Cargar cabecera
+                const cabeceraRes = await fetch('/partials/cabecera.html');
+                const cabeceraHtml = await cabeceraRes.text();
+                document.getElementById('cabecera-container').innerHTML = cabeceraHtml;
 
-                const resUsuario = await fetch('/api/usuarios/perfil', { credentials: 'include' });
-                const data = await resUsuario.json();
-                const user = data.usuario;
+                // Ejecutar scripts embebidos dentro de cabecera.html
+                const scripts = document.getElementById('cabecera-container').querySelectorAll('script');
+                scripts.forEach(script => {
+                    if (script.textContent) eval(script.textContent);
+                });
 
-                if (!user) {
-                    document.getElementById('saludo').textContent = "No autenticado";
+                // Obtener usuario autenticado
+                const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.usuario) {
+                    document.getElementById('saludo').textContent = 'No autenticado';
                     return;
                 }
 
-                rolUsuario = user.rol;
+                usuarioActual = data.usuario;
+                const esProfesionalViendoPaciente = usuarioActual.rol === 'profesional' && idPaciente;
 
-                // Mostrar botón de panel si profesional
-                if (rolUsuario === 'profesional') {
-                    const btnPanel = document.getElementById('btnPanel');
-                    if (btnPanel) btnPanel.style.display = 'inline-block';
+                // Mostrar botón panel si es profesional (después de cargar cabecera)
+                /*                setTimeout(() => {
+                    if (usuarioActual.rol === 'profesional') {
+                        const btnPanel = document.getElementById('btnPanel');
+                        if (btnPanel) btnPanel.style.display = 'inline-block';
+                    }
+                }, 0);
+                */
+                if (data.usuario?.rol === 'profesional') {
+                    document.getElementById('linkProfesional').style.display = 'inline-block';
                 }
 
-                // Saludo y datos
-                document.getElementById('saludo').textContent = `Bienvenido, ${user.username}`;
-                document.getElementById('username').textContent = user.username;
-                document.getElementById('email').textContent = user.email;
-                document.getElementById('rol').textContent = user.rol;
+
+                if (esProfesionalViendoPaciente) {
+                    await cargarPerfilPaciente(idPaciente);
+                } else {
+                    mostrarPerfilUsuario(usuarioActual);
+                    if (usuarioActual.rol === 'paciente') {
+                        await cargarProgreso(usuarioActual._id || usuarioActual.id);
+                        await cargarCitasPaciente(usuarioActual._id);
+                    } else {
+                        document.getElementById('bloqueProgreso').style.display = 'none';
+                        await cargarCitasProfesional();
+                    }
+                }
 
                 // Mostrar contenido
                 document.getElementById('contenidoPrincipal').style.display = 'block';
 
-                if (rolUsuario === 'paciente') {
-                    await cargarProgreso();
-                } else {
-                    document.getElementById('bloqueProgreso').style.display = 'none';
-                }
-
-                if (rolUsuario === 'profesional') {
-                    const btnPanel = document.getElementById('btnPanel');
-                    const linkProfesional = document.getElementById('linkProfesional');
-                    if (btnPanel) btnPanel.style.display = 'inline-block';
-                    if (linkProfesional) linkProfesional.style.display = 'inline-block';
-                }
-
-
-                await mostrarCitas();
-
-                // Evento cerrar sesión
+                // Cerrar sesión
                 const btnCerrar = document.getElementById('cerrarSesion');
                 if (btnCerrar) {
                     btnCerrar.addEventListener('click', async () => {
-                        await fetch('/api/usuarios/logout', {
-                            method: 'POST',
-                            credentials: 'include'
-                        });
+                        await fetch('/api/usuarios/logout', { method: 'POST', credentials: 'include' });
                         window.location.href = '/login.html';
                     });
                 }
 
             } catch (err) {
                 console.error('Error al cargar cabecera o perfil:', err);
-                document.getElementById('saludo').textContent = 'Error al cargar el perfil.';
+                document.getElementById('saludo').textContent = 'Error al cargar perfil.';
             }
         }
 
-        async function cargarProgreso() {
+
+        function mostrarPerfilUsuario(user) {
+            document.getElementById('saludo').textContent = `Bienvenido, ${user.username}`;
+            document.getElementById('username').textContent = user.username;
+            document.getElementById('email').textContent = user.email;
+            document.getElementById('rol').textContent = user.rol;
+        }
+
+        async function cargarPerfilPaciente(id) {
             try {
-                const res = await fetch('/api/resultados/progreso');
+                const res = await fetch(`/api/usuarios/${id}`, { credentials: 'include' });
+                const data = await res.json();
+                pacienteActual = data.usuario;
+                mostrarPerfilUsuario(pacienteActual);
+                await cargarProgreso(id);
+                await cargarCitasPaciente(id);
+            } catch (err) {
+                console.error('Error al cargar perfil del paciente:', err);
+                document.getElementById('saludo').textContent = 'No se pudo cargar el perfil del paciente.';
+            }
+        }
+
+        async function cargarProgreso(id) {
+            try {
+                const res = await fetch(`/api/resultados/progreso/${id}`);
                 const data = await res.json();
                 const ctx = document.getElementById('graficoProgreso').getContext('2d');
 
@@ -118,89 +143,89 @@
                         datasets: [{
                             label: 'Progreso (%)',
                             data: [data.velocidad, data.precision, data.comprension, data.escritura],
-                            backgroundColor: [
-                                'rgba(75, 192, 192, 0.7)',
-                                'rgba(255, 159, 64, 0.7)',
-                                'rgba(153, 102, 255, 0.7)',
-                                'rgba(255, 99, 132, 0.7)'
-                            ],
-                            borderColor: [
-                                'rgba(75, 192, 192, 1)',
-                                'rgba(255, 159, 64, 1)',
-                                'rgba(153, 102, 255, 1)',
-                                'rgba(255, 99, 132, 1)'
-                            ],
+                            backgroundColor: ['#4bc0c0', '#ff9f40', '#9966ff', '#ff6384'],
+                            borderColor: ['#4bc0c0', '#ff9f40', '#9966ff', '#ff6384'],
                             borderWidth: 1
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
-                            }
-                        }
+                        scales: { y: { beginAtZero: true, max: 100 } }
                     }
                 });
             } catch (error) {
                 console.error('Error al cargar progreso:', error);
+                document.getElementById('bloqueProgreso').style.display = 'none';
             }
         }
 
-        async function mostrarCitas() {
-            const endpoint = rolUsuario === 'profesional'
-                ? '/api/citas/mis-citas'
-                : '/api/citas/mis-citas-paciente';
+        async function cargarCitasPaciente(id) {
+            try {
+                const endpoint = usuarioActual.rol === 'profesional'
+                    ? `/api/citas/citas-paciente/${id}`
+                    : '/api/citas/mis-citas-paciente';
 
-            const res = await fetch(endpoint, { credentials: 'include' });
-            const data = await res.json();
-            const lista = document.getElementById('listaCitas');
-            lista.innerHTML = '';
+                const res = await fetch(endpoint, { credentials: 'include' });
+                const data = await res.json();
+                const lista = document.getElementById('listaCitas');
+                lista.innerHTML = '';
 
-            if (res.ok && data.eventos) {
-                const ahora = new Date();
-                ahora.setHours(0, 0, 0, 0);
-
-                const citasDesdeHoy = data.eventos
-                    .filter(evt => {
-                        const fecha = new Date(evt.start || evt.fecha);
-                        return !isNaN(fecha) && fecha >= ahora;
-                    })
-                    .sort((a, b) => new Date(a.start || a.fecha) - new Date(b.start || b.fecha));
-
-                if (citasDesdeHoy.length === 0) {
-                    lista.innerHTML = '<li>No hay citas desde hoy.</li>';
+                if (!data.eventos || data.eventos.length === 0) {
+                    lista.innerHTML = '<li>No hay citas registradas.</li>';
                     return;
                 }
 
-                citasDesdeHoy.forEach(evt => {
+                data.eventos.forEach(evt => {
                     const div = document.createElement('div');
                     div.innerHTML = `
-            <h3>${new Date(evt.start || evt.fecha).toLocaleString()}</h3>
+            <h3>${new Date(evt.start).toLocaleString()}</h3>
             <table>
-              <thead>
-                <tr>
-                  ${rolUsuario === 'profesional' ? '<th>Paciente</th>' : ''}
-                  <th>Juego</th>
-                  ${rolUsuario === 'paciente' ? '<th>¿Jugado?</th>' : ''}
-                </tr>
-              </thead>
+              <thead><tr><th>Juego</th><th>¿Jugado?</th></tr></thead>
               <tbody>
-                ${evt.juegos.map(j => `
-                  <tr>
-                    ${rolUsuario === 'profesional' ? `<td>${evt.title}</td>` : ''}
-                    <td>${j.titulo}</td>
-                    ${rolUsuario === 'paciente'
-                            ? `<td><input type="checkbox" disabled ${j.jugado ? 'checked' : ''}></td>`
-                            : ''}
-                  </tr>`).join('')}
+                ${evt.juegos.map(j =>
+                        `<tr><td>${j.titulo}</td><td><input type="checkbox" disabled ${j.jugado ? 'checked' : ''}></td></tr>`
+                    ).join('')}
               </tbody>
-            </table>
-          `;
+            </table>`;
                     lista.appendChild(div);
                 });
+
+            } catch (err) {
+                console.error('Error al cargar citas:', err);
+                document.getElementById('bloqueCitas').style.display = 'none';
+            }
+        }
+
+        async function cargarCitasProfesional() {
+            try {
+                const res = await fetch('/api/citas/mis-citas', { credentials: 'include' });
+                const data = await res.json();
+                const lista = document.getElementById('listaCitas');
+                lista.innerHTML = '';
+
+                if (!data.eventos || data.eventos.length === 0) {
+                    lista.innerHTML = '<li>No hay citas registradas.</li>';
+                    return;
+                }
+
+                data.eventos.forEach(evt => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+            <h3>${new Date(evt.start).toLocaleString()}</h3>
+            <table>
+              <thead><tr><th>Paciente</th><th>Juego</th></tr></thead>
+              <tbody>
+                ${evt.juegos.map(j =>
+                        `<tr><td>${evt.title}</td><td>${j.titulo}</td></tr>`
+                    ).join('')}
+              </tbody>
+            </table>`;
+                    lista.appendChild(div);
+                });
+
+            } catch (err) {
+                console.error('Error al cargar citas del profesional:', err);
             }
         }
 

@@ -182,14 +182,24 @@
 
 
         tbody.appendChild(fila);
-        if (h.paciente) pacientesSet.add(h.paciente);
+        //if (h.paciente) pacientesSet.add(h);
+        if (h.paciente && h._id) {
+          pacientesSet.add(JSON.stringify({ nombre: h.paciente, id: h._id }));
+        }
       });
 
-      pacientesSet.forEach(p => {
+      pacientesSet.forEach(pStr => {
+        console.log('Paciente:', pStr);
+        const p = JSON.parse(pStr);
         const li = document.createElement('li');
-        li.textContent = p;
+        li.textContent = p.nombre.nombre;
+        li.style.cursor = 'pointer';
+        li.addEventListener('click', () => {
+          window.location.href = `/perfil.html?paciente=${p.nombre._id}`;
+        });
         listaPacientes.appendChild(li);
       });
+
     }
 
     async function abrirModal(hora) {

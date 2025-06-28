@@ -84,7 +84,11 @@ router.get('/horarios-dia', requiereRol('profesional'), async (req, res) => {
       const horaCita = c.fecha.toTimeString().slice(0, 5);
       const idx = horarios.findIndex(h => h.hora === horaCita);
       if (idx !== -1) {
-        horarios[idx].paciente = c.paciente?.nombre || 'Desconocido';
+        horarios[idx].paciente = c.paciente ? {
+          _id: c.paciente._id,
+          nombre: c.paciente.nombre
+        } : null;
+
         horarios[idx]._id = c._id;
       }
     });
@@ -171,5 +175,29 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ mensaje: 'Error al actualizar cita' });
   }
 });
+
+// Citas de un paciente por ID (para profesionales)
+router.get('/citas-paciente/:idPaciente', requiereRol('profesional'), async (req, res) => {
+  try {
+    const citas = await Cita.find({ paciente: req.params.idPaciente })
+      .populate('juegos')
+      .sort({ fecha: 1 });
+
+    const resultados = await Resultado.find({ paciente: req.params.idPaciente });
+
+    const eventos = citas.map(cita => ({
+      start: cita.fecha,
+      juegos: cita.juegos.map(juego => ({
+        titulo: juego.titulo,
+        jugado: resultados.some(r => r.juego.toString() === juego._id.toString())
+      }))
+    }));
+
+    res.json({ eventos });
+  } catch (err) {
+    res.status(500).json({ mensaje: 'Error al obtener citas del paciente' });
+  }
+});
+
 
 module.exports = router;

@@ -119,6 +119,9 @@
             }
         }
 
+        // Cambios en panel-profesional.html
+        // Agrega en obtenerPacientes el evento para ver el perfil del paciente seleccionado
+
         async function obtenerPacientes() {
             const res = await fetch('/api/usuarios/mis-pacientes', { credentials: 'include' });
             const data = await res.json();
@@ -127,9 +130,14 @@
             data.pacientes.forEach(p => {
                 const li = document.createElement('li');
                 li.textContent = `${p.nombre} (DNI: ${p.dni})`;
+                li.style.cursor = 'pointer';
+                li.addEventListener('click', () => {
+                    window.location.href = `/perfil.html?paciente=${p._id}`;
+                });
                 lista.appendChild(li);
             });
         }
+
 
         async function cargarCalendario() {
             const res = await fetch('/api/citas/mis-citas', { credentials: 'include' });
