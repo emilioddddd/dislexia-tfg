@@ -3,59 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>Sopa de Letras</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      text-align: center;
-      padding: 20px;
-    }
-
-    #sopa {
-      display: grid;
-      grid-template-columns: repeat(10, 30px);
-      grid-gap: 5px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .celda {
-      width: 30px;
-      height: 30px;
-      line-height: 30px;
-      background: white;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      font-weight: bold;
-      user-select: none;
-    }
-
-    .encontrada {
-      background-color: #32cd32;
-      color: black;
-      text-decoration: none;
-    }
-
-    #palabras {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    #mensaje {
-      margin-top: 20px;
-      font-weight: bold;
-      font-size: 1.1em;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/sopa-letras.css">
 </head>
 <body>
+  <div id="cabecera-container"></div>
 
-  <h1>Sopa de Letras</h1>
-  <div id="sopa"></div>
-  <h2>Palabras a encontrar</h2>
-  <ul id="palabras"></ul>
-  <p id="mensaje"></p>
-  <a href="/juegos.html">← Volver a Juegos</a>
+  <div class="wrapper">
+    <div class="contenedor-juego">
+      <h1>Sopa de Letras</h1>
+      <div id="sopa"></div>
+
+      <h2>Palabras a encontrar</h2>
+      <ul id="palabras"></ul>
+
+      <p id="mensaje"></p>
+
+      <div class="botones-finales">
+        <a href="javascript:location.reload()" class="btn-reiniciar">🔁 Reiniciar</a>
+        <a href="/juegos.html" class="btn-volver">🔙 Volver</a>
+      </div>
+    </div>
+  </div>
 
   <script>
     const palabras = ['DISLEXIA', 'LEER', 'PALABRA', 'ESCUCHAR', 'DIFICULTAD'];
@@ -154,18 +123,16 @@
 
     function resaltarPalabra(palabra) {
       if (!posicionesPalabras[palabra]) return;
-
       posicionesPalabras[palabra].forEach(([f, c]) => {
         const celda = document.querySelector(`.celda[data-fila="${f}"][data-col="${c}"]`);
         celda.dataset.ayudaTemporal = 'true';
-        celda.style.backgroundColor = '#ffd700'; // amarillo
+        celda.style.backgroundColor = '#ffd700';
       });
-
       setTimeout(() => {
         posicionesPalabras[palabra].forEach(([f, c]) => {
           const celda = document.querySelector(`.celda[data-fila="${f}"][data-col="${c}"]`);
           if (celda.dataset.ayudaTemporal === 'true') {
-            celda.style.backgroundColor = celda.classList.contains('encontrada') ? '#32cd32' : 'white';
+            celda.style.backgroundColor = celda.classList.contains('encontrada') ? '#32cd32' : '#ecf0f1';
             delete celda.dataset.ayudaTemporal;
           }
         });
@@ -210,7 +177,7 @@
 
           seleccion.forEach(c => {
             c.style.backgroundColor = '#32cd32';
-            c.style.color = 'black';
+            c.style.color = 'white';
             c.classList.add('encontrada');
           });
 
@@ -218,8 +185,7 @@
         } else {
           mensaje.textContent = 'No coincide.';
           seleccion.forEach(c => {
-            c.style.backgroundColor = 'white';
-            c.style.color = 'black';
+            c.style.backgroundColor = '#ecf0f1';
             c.classList.remove('encontrada');
           });
         }
@@ -251,11 +217,22 @@
             intentos
           }
         })
-      })
-      .then(res => res.json())
-      .then(data => console.log('Resultado guardado:', data))
-      .catch(err => console.error('Error al guardar resultado:', err));
+      });
     }
+
+    // Cargar cabecera
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
+        const scripts = contenedor.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement('script');
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      });
 
     palabras.forEach(colocarPalabra);
     rellenarGrid();
