@@ -6,6 +6,7 @@
   <title>Citas del Día</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
   <link rel="stylesheet" href="/styles/ver-citas-dia.css">
+
 </head>
 
 <body>
@@ -15,6 +16,7 @@
     <h1 id="fechaSeleccionada">Día seleccionado</h1>
     <div class="contenedor-flex">
       <div class="horario">
+        <h2>Horarios disponibles</h2>
         <table>
           <thead>
             <tr>
@@ -101,32 +103,37 @@
       return new Choices(select, { removeItemButton: true });
     }
 
-    async function cargarCabecera() {
-      const resCabecera = await fetch('/partials/cabecera.html');
-      const htmlCabecera = await resCabecera.text();
-      document.getElementById('cabecera-container').innerHTML = htmlCabecera;
+    // Cargar cabecera y verificar sesión
+    let usuarioActual = null;
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
 
-      const resUsuario = await fetch('/api/usuarios/perfil', { credentials: 'include' });
-      const data = await resUsuario.json();
-      const usuario = data.usuario;
-
-      if (usuario?.rol === 'profesional') {
-        document.getElementById('btnPanel')?.style.setProperty('display', 'inline-block');
-        document.getElementById('linkProfesional')?.style.setProperty('display', 'inline-block');
-      }
-
-      const path = window.location.pathname;
-      if (path.includes('perfil.html')) document.getElementById('btnPerfil')?.classList.add('boton-activo');
-      if (path.includes('juegos.html')) document.getElementById('btnJuegos')?.classList.add('boton-activo');
-      if (path.includes('panel-profesional.html') || path.includes('ver-citas-dia.html')) {
-        document.getElementById('btnPanel')?.classList.add('boton-activo');
-      }
-
-      document.getElementById('cerrarSesion')?.addEventListener('click', async () => {
-        await fetch('/api/usuarios/logout', { method: 'POST', credentials: 'include' });
-        window.location.href = '/login.html';
+        // Reactivar scripts que vienen inyectados
+        const scripts = contenedor.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+          verificarSesion();
+        });
       });
+    async function verificarSesion() {
+      const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok && data.usuario.rol === 'profesional') {
+        usuarioActual = data.usuario;
+        document.getElementById('bienvenida').textContent = `Bienvenido, Dr. ${usuarioActual.username}`;
+        document.getElementById('contenidoProfesional').style.display = 'block';
+        cargarCalendario();
+        obtenerPacientes();
+      } else {
+        document.getElementById('bienvenida').textContent = 'Acceso denegado';
+      }
     }
+
 
     async function cargarHorarios() {
       const fecha = new URLSearchParams(window.location.search).get('fecha');
@@ -157,13 +164,15 @@
           btnE.onclick = () => abrirModalEditar(h);
           acciones.appendChild(btnE);
 
-          const btnD = document.createElement('button');
-          btnD.textContent = 'Eliminar cita';
-          btnD.onclick = () => mostrarConfirmacionEliminar(h._id, h.paciente, h.hora);
-          acciones.appendChild(btnD);
+
         } else {
           const hoy = new Date().toISOString().split('T')[0];
           if (fechaGlobal >= hoy) {
+            const btnD = document.createElement('button');
+            btnD.textContent = 'Eliminar cita';
+            btnD.onclick = () => mostrarConfirmacionEliminar(h._id, h.paciente, h.hora);
+            acciones.appendChild(btnD);
+
             const btnAdd = document.createElement('button');
             btnAdd.textContent = 'Añadir cita';
             btnAdd.onclick = () => abrirModal(h.hora);
@@ -284,7 +293,6 @@
       // Establecer la fecha mínima a hoy (para evitar seleccionar días anteriores)
       const hoyISO = new Date().toISOString().split('T')[0];
       document.getElementById('editarFecha').setAttribute('min', hoyISO);
-
       // --- DESHABILITAR CAMPOS SI LA FECHA ES PASADA ---
       const fechaCita = new Date(cita.fecha.split('T')[0]);
       const hoy = new Date();
@@ -388,7 +396,7 @@
       }
     });
 
-    cargarCabecera();
+    //cargarCabecera();
     cargarHorarios();
   </script>
 </body>

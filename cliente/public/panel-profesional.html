@@ -89,14 +89,7 @@
         let usuarioActual = null;
         let choicesJuegos;
 
-        /*
-        fetch('/partials/cabecera.html')
-          .then(res => res.text())
-          .then(html => {
-            document.getElementById('cabecera-container').innerHTML = html;
-            verificarSesion();
-          });
-          */
+        // Cargar cabecera
         fetch('/partials/cabecera.html')
             .then(res => res.text())
             .then(html => {
@@ -147,7 +140,7 @@
                 events: data.eventos || [],
                 dateClick(info) {
                     const fecha = info.dateStr;
-                    window.open(`/ver-citas-dia.html?fecha=${fecha}`, '_blank');
+                    window.location.href = `/ver-citas-dia.html?fecha=${fecha}`;
                 }
             });
             calendar.render();

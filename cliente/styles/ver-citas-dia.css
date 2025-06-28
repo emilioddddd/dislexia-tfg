@@ -1,21 +1,37 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f9f9f9;
+/* === Estructura base === */
+html, body {
   margin: 0;
-  padding: 20px;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f2f4f7;
+  height: 100%;
 }
 
+/* === Cabecera === */
+#cabecera-container {
+  width: 100%;
+}
+
+/* === Contenedor principal === */
 .contenedor {
   max-width: 1200px;
+  width: 95%;
   margin: auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
+/* === Título === */
 h1 {
   color: #333;
-  margin-bottom: 20px;
+  margin: 20px 0;
+  text-align: center;
 }
 
+/* === Contenido dividido === */
 .contenedor-flex {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -29,18 +45,34 @@ h1 {
   .horario,
   .pacientes {
     width: 50%;
+    height: auto;
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 180px); /* Ajusta si la cabecera es más alta */
   }
 }
 
+/* === Secciones izquierda/derecha === */
+.horario,
+.pacientes {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Tablas === */
 table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  margin-top: 10px;
 }
 
-table th,
-table td {
+th, td {
   border: 1px solid #ccc;
   padding: 10px;
   text-align: left;
@@ -50,37 +82,49 @@ th {
   background-color: #eee;
 }
 
+/* === Botones === */
 button {
-  margin: 2px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
-  background-color: #35424a;
+  background-color: #3498db;
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
 }
 
 button:hover {
-  background-color: #2a373d;
+  background-color: #2980b9;
+}
+
+/* === Pacientes === */
+.pacientes h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .pacientes ul {
   list-style: none;
   padding-left: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 250px); /* Ajuste según altura cabecera */
 }
 
 .pacientes li {
-  background: #fff;
-  padding: 8px;
-  margin: 5px 0;
-  border-left: 4px solid #35424a;
+  background: #f4f4f4;
+  padding: 10px;
+  margin: 6px 0;
+  border-left: 4px solid #3498db;
+  border-radius: 5px;
 }
 
-/* Modal general */
+/* === Modales y overlay === */
 #overlay,
-#modalCita,
-#modalConfirmacion,
-#modalEditarCita {
+.modal {
   display: none;
   position: fixed;
   z-index: 9999;
@@ -97,22 +141,40 @@ button:hover {
 .modal {
   background: white;
   padding: 20px;
-  border-radius: 8px;
-  max-width: 400px;
+  border-radius: 10px;
+  max-width: 450px;
   width: 90%;
-  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
-.modal button {
-  margin-top: 10px;
+.modal h3 {
+  margin-top: 0;
+}
+
+.modal form label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: bold;
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 
 .acciones-modal {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.modal p {
+  margin-top: 10px;
 }
