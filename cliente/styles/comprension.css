@@ -2,16 +2,15 @@
     box-sizing: border-box;
 }
 
+html,
 body {
-    font-family: 'Poppins', sans-serif;
     margin: 0;
-    padding: 20px;
-    background-color: #f0f4f8;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f2f4f7;
+    height: 100%;
 }
 
-#cabecera-container {
-    margin-bottom: 30px;
-}
 
 h1 {
     text-align: center;
@@ -48,15 +47,15 @@ p {
 }
 
 button {
-    display: inline-block;
-    margin: 15px 5px 0;
-    padding: 10px 20px;
     background-color: #3498db;
     color: white;
     border: none;
-    border-radius: 6px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
     cursor: pointer;
-    font-size: 16px;
+    transition: background-color 0.3s ease;
 }
 
 button:hover {
@@ -74,6 +73,47 @@ button:hover {
     display: none;
 }
 
+
+.boton-central {
+    display: block;
+    margin: 20px auto;
+    /* Esto lo centra horizontalmente */
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.volver-fijo {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.volver-fijo a {
+    text-decoration: none;
+    background-color: #ecf0f1;
+    color: #2c3e50;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s;
+}
+
+.volver-fijo a:hover {
+    background-color: #d0d7dc;
+}
+
+.botones-extra {
+    text-align: center;
+    margin-top: 30px;
+}
+
 .botones-finales {
   display: flex;
   justify-content: center;
@@ -82,14 +122,36 @@ button:hover {
   margin-top: 20px;
 }
 
-.boton-central {
-  display: block;
-  margin: 20px auto; /* Esto lo centra horizontalmente */
-  padding: 10px 20px;
-  background-color: #3498db;
+.botones-finales button {
+  background-color: #2ecc71;
   color: white;
   border: none;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
   cursor: pointer;
-  font-size: 16px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.botones-finales a {
+  background-color: #95a5a6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.botones-finales button:hover {
+  background-color: #27ae60;
+}
+
+.botones-finales a:hover {
+  background-color: #7f8c8d;
 }

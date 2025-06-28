@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <title>Comprensión Lectora</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
   <link rel="stylesheet" href="../styles/comprension.css">
 </head>
+
 <body>
   <div id="cabecera-container"></div>
+
 
   <h1>Comprensión Lectora</h1>
 
   <div class="contenedor oculto" id="bloqueTexto">
     <h2>Lee el siguiente texto</h2>
     <p id="texto">
-      Carla tiene una gata llamada Nube. Cada mañana, Nube salta a la cama para despertar a Carla con suaves maullidos. Luego se sientan juntas a mirar por la ventana cómo salen los primeros rayos del sol.
+      Carla tiene una gata llamada Nube. Cada mañana, Nube salta a la cama para despertar a Carla con suaves maullidos.
+      Luego se sientan juntas a mirar por la ventana cómo salen los primeros rayos del sol.
     </p>
     <button class="boton-central" id="empezarPreguntas">He leído el texto</button>
   </div>
@@ -47,18 +51,22 @@
     </form>
 
     <div id="resultado" class="resultado"></div>
-
-    <div class="botones-finales oculto" id="botonesExtra">
-      <button onclick="reiniciar()">🔁 Reiniciar</button>
-      <button onclick="window.location.href='/juegos.html'">🏠 Volver a Juegos</button>
-    </div>
   </div>
 
+
+  <!-- Pantalla de inicio -->
   <div class="contenedor" id="inicio">
     <h2>¿Listo para comenzar?</h2>
     <p>Este ejercicio pondrá a prueba tu capacidad de comprensión lectora. Pulsa el botón para comenzar.</p>
     <button class="boton-central" id="btnIniciar">Iniciar lectura</button>
   </div>
+
+  <!-- Botones reiniciar y volver juntos -->
+  <div class="botones-finales oculto" id="botonesExtra">
+    <button onclick="reiniciar()">🔁 Reiniciar</button>
+    <a href="javascript:history.back()">🔙 Atrás</a>
+  </div>
+
 
   <script>
     let inicioLectura = null;
@@ -82,12 +90,14 @@
       document.getElementById('inicio').classList.add('oculto');
       document.getElementById('bloqueTexto').classList.remove('oculto');
       inicioLectura = Date.now();
+      document.getElementById('botonReiniciar').classList.remove('oculto');
     });
 
     // Ir a preguntas
     document.getElementById('empezarPreguntas').addEventListener('click', () => {
       document.getElementById('bloqueTexto').classList.add('oculto');
       document.getElementById('bloquePreguntas').classList.remove('oculto');
+      document.getElementById('botonReiniciar').classList.remove('oculto');
     });
 
     // Enviar respuestas
@@ -106,7 +116,7 @@
       document.getElementById('resultado').textContent =
         `✅ Has acertado ${aciertos} de ${totalPreguntas} preguntas en ${tiempoLecturaSegundos} segundos.`;
 
-      document.getElementById('botonesExtra').classList.remove('oculto');
+      document.getElementById('botonReiniciar').classList.remove('oculto');
 
       // Guardar resultado
       try {
@@ -133,4 +143,5 @@
     }
   </script>
 </body>
+
 </html>
