@@ -3,71 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <title>Juego de Memoria - Dislexia</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f0f8ff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    h1 {
-      color: #333;
-    }
-
-    #tablero {
-      display: grid;
-      grid-template-columns: repeat(4, 120px);
-      grid-gap: 15px;
-      margin-top: 20px;
-    }
-
-    .carta {
-      background-color: #ffffff;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-      width: 120px;
-      height: 100px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      cursor: pointer;
-      user-select: none;
-      font-weight: bold;
-      color: transparent;
-      transition: all 0.3s ease;
-    }
-
-    .carta.visible {
-      color: #222;
-      background-color: #e0f7fa;
-    }
-
-    .carta.acertada {
-      background-color: #c8e6c9;
-      color: #000;
-      cursor: default;
-    }
-
-    #resultado {
-      margin-top: 20px;
-    }
-
-    #reiniciar {
-      margin-top: 10px;
-      padding: 8px 16px;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/memoria.css">
 </head>
 <body>
-  <h1>Juego de Memoria de Palabras</h1>
-  <div id="tablero"></div>
-  <div id="resultado"></div>
-  <button id="reiniciar" style="display:none">Reiniciar juego</button>
+
+  <div id="cabecera-container"></div>
+
+  <div class="contenedor">
+    <h1>Juego de Memoria de Palabras</h1>
+    <div id="tablero"></div>
+    <div id="resultado"></div>
+
+    <div class="botones-finales">
+      <button id="reiniciar">🔁 Reiniciar</button>
+      <a href="javascript:history.back()">🔙 Atrás</a>
+    </div>
+  </div>
 
   <script>
     const palabras = ["casa", "perro", "libro", "escuela", "gato", "familia", "comida", "amigo"];
@@ -82,7 +34,6 @@
     function iniciarJuego() {
       const tablero = document.getElementById('tablero');
       const resultado = document.getElementById('resultado');
-      const reiniciar = document.getElementById('reiniciar');
 
       cartas = [...palabras, ...palabras]
         .sort(() => 0.5 - Math.random())
@@ -93,14 +44,12 @@
           div.dataset.index = index;
           div.textContent = palabra;
           div.addEventListener('click', () => seleccionarCarta(div));
-          tablero.appendChild(div);
           return div;
         });
 
       tablero.innerHTML = '';
       cartas.forEach(carta => tablero.appendChild(carta));
       resultado.textContent = '';
-      reiniciar.style.display = 'none';
       aciertos = 0;
       intentos = 0;
       inicio = new Date();
@@ -150,13 +99,12 @@
 
     function mostrarResultado(tiempo, intentos) {
       const resultado = document.getElementById('resultado');
-      resultado.innerHTML = `<p>Juego terminado en ${tiempo} segundos y ${intentos} intentos.</p>`;
-
-      document.getElementById('reiniciar').style.display = 'inline-block';
+      resultado.innerHTML = `✅ Juego terminado en <strong>${tiempo}</strong> segundos y <strong>${intentos}</strong> intentos.`;
 
       fetch('/api/resultados', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ juegoTipo: 'memoria', datos: { tiempo, intentos } })
       });
     }
@@ -165,6 +113,20 @@
       document.getElementById('tablero').innerHTML = '';
       iniciarJuego();
     });
+
+    // Cargar cabecera
+    fetch('/partials/cabecera.html')
+      .then(res => res.text())
+      .then(html => {
+        const contenedor = document.getElementById('cabecera-container');
+        contenedor.innerHTML = html;
+        const scripts = contenedor.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement('script');
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      });
 
     iniciarJuego();
   </script>
