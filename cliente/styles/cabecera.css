@@ -54,3 +54,8 @@
 .botones > * {
   margin-left: 10px;
 }
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

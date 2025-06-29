@@ -39,7 +39,8 @@ router.get('/mis-citas-paciente', requiereRol('paciente'), async (req, res) => {
       start: cita.fecha,
       juegos: cita.juegos.map(juego => ({
         titulo: juego.titulo,
-        jugado: resultados.some(r => r.juego.toString() === juego._id.toString())
+        jugado: resultados.some(r => r.juego.toString() === juego._id.toString()),
+        ruta: juego.ruta
       }))
     }));
 

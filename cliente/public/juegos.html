@@ -84,6 +84,8 @@
 
         const data = await resJuegos.json();
         const juegos = Array.isArray(data) ? data : data.juegos || [];
+        const juegosFiltrados = juegos.filter(j => j.tipo !== 'test-inicial');
+
 
         if (!juegos.length) {
           document.getElementById('juegos-recomendados').innerHTML = '<p>No hay juegos disponibles.</p>';
@@ -97,7 +99,7 @@
           .slice(0, 2)
           .map(([area]) => area.toLowerCase());
 
-        const recomendados = juegos.filter(j => j.areas?.some(a => peoresAreas.includes(a.toLowerCase())));
+        const recomendados = juegosFiltrados.filter(j => j.areas?.some(a => peoresAreas.includes(a.toLowerCase())));
         const contenedorRecomendados = document.getElementById('juegos-recomendados');
         contenedorRecomendados.innerHTML = recomendados.length
           ? recomendados.map(j => crearHTMLJuego(j)).join('')
@@ -105,7 +107,7 @@
 
         // Juegos por área
         const juegosPorArea = {};
-        juegos.forEach(j => {
+        juegosFiltrados.forEach(j => {
           (j.areas || []).forEach(area => {
             if (!juegosPorArea[area]) juegosPorArea[area] = [];
             juegosPorArea[area].push(j);

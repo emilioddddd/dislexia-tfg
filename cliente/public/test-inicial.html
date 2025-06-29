@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Inicial - Dixlab</title>
+  <link rel="stylesheet" href="/styles/test.css">
+</head>
+<body>
+  <div class="contenedor">
+    <h1>Test Inicial de Evaluación</h1>
+    <form id="formTest">
+      <div class="pregunta" data-area="velocidad">
+        <h3>1. ¿Te resulta difícil leer rápidamente un texto en voz alta?</h3>
+        <label><input type="radio" name="q1" value="3"> Sí</label>
+        <label><input type="radio" name="q1" value="2"> A veces</label>
+        <label><input type="radio" name="q1" value="1"> No</label>
+      </div>
+
+      <div class="pregunta" data-area="precisión">
+        <h3>2. ¿Sueles confundir letras que se parecen (como "b" y "d")?</h3>
+        <label><input type="radio" name="q2" value="3"> Sí</label>
+        <label><input type="radio" name="q2" value="2"> A veces</label>
+        <label><input type="radio" name="q2" value="1"> No</label>
+      </div>
+
+      <div class="pregunta" data-area="comprensión">
+        <h3>3. ¿Entiendes bien lo que lees?</h3>
+        <label><input type="radio" name="q3" value="1"> Sí</label>
+        <label><input type="radio" name="q3" value="2"> A veces</label>
+        <label><input type="radio" name="q3" value="3"> No</label>
+      </div>
+
+      <div class="pregunta" data-area="escritura">
+        <h3>4. ¿Cometes errores ortográficos al escribir palabras comunes?</h3>
+        <label><input type="radio" name="q4" value="3"> Sí</label>
+        <label><input type="radio" name="q4" value="2"> A veces</label>
+        <label><input type="radio" name="q4" value="1"> No</label>
+      </div>
+
+      <button type="submit">Enviar Test</button>
+    </form>
+    <p id="resultado" class="mensaje"></p>
+  </div>
+
+  <script>
+    document.getElementById('formTest').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const preguntas = document.querySelectorAll('.pregunta');
+      const progreso = {
+        velocidad: 0,
+        precisión: 0,
+        comprensión: 0,
+        escritura: 0
+      };
+
+      for (const pregunta of preguntas) {
+        const area = pregunta.dataset.area;
+        const seleccion = pregunta.querySelector('input:checked');
+        if (seleccion) {
+          progreso[area] += parseInt(seleccion.value);
+        } else {
+          document.getElementById('resultado').textContent = 'Por favor responde todas las preguntas.';
+          document.getElementById('resultado').style.color = 'red';
+          return;
+        }
+      }
+
+      const res = await fetch('/api/resultados/test-inicial', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(progreso)
+      });
+
+      if (res.ok) {
+        document.getElementById('resultado').textContent = 'Test enviado correctamente.';
+        document.getElementById('resultado').style.color = 'green';
+        setTimeout(() => window.location.href = '/perfil.html', 2000);
+      } else {
+        document.getElementById('resultado').textContent = 'Error al enviar test.';
+        document.getElementById('resultado').style.color = 'red';
+      }
+    });
+  </script>
+</body>
+</html>

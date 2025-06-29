@@ -49,4 +49,28 @@ router.get('/mis-resultados', requiereSesion, async (req, res) => {
   }
 });
 
+router.post('/test-inicial', requiereSesion, async (req, res) => {
+  try {
+    const { velocidad, precisión, comprensión, escritura } = req.body;
+
+    const juego = await Juego.findOne({ tipo: 'test-inicial' });
+    if (!juego) return res.status(404).json({ mensaje: 'Juego test-inicial no encontrado' });
+
+    const resultado = new Resultado({
+      paciente: req.session.usuario.id,
+      juego: juego._id,
+      datos: { velocidad, precisión, comprensión, escritura },
+      fecha: new Date()
+    });
+
+    await resultado.save();
+    res.json({ mensaje: 'Test inicial guardado correctamente' });
+  } catch (err) {
+    console.error('Error en test inicial:', err);
+    res.status(500).json({ mensaje: 'Error al guardar test inicial' });
+  }
+});
+
+
+
 module.exports = router;

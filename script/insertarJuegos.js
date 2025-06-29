@@ -54,6 +54,13 @@ const juegos = [
     tipo: 'imagen-palabra',
     ruta: '/juegos/imagen-palabra.html',
     areas: ['precisión', 'comprensión']
+  },
+  {
+    titulo: 'Test Inicial de Dislexia',
+    descripcion: 'Evaluación inicial del paciente para establecer su nivel base.',
+    tipo: 'test-inicial',
+    ruta: '/test-inicial.html',
+    areas: ['velocidad', 'precisión', 'comprensión', 'escritura']
   }
 ];
 

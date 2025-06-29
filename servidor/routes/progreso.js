@@ -77,6 +77,12 @@ function calcularProgreso(resultados) {
             const { aciertos = 0, intentos = 0, tiempo = 60 } = datos;
             precision.push(normalizarInverso(intentos - aciertos, 10));
             comprension.push(normalizarInverso(tiempo, 60));
+        } else if (tipo === 'test-inicial') {
+            if (datos.velocidad) velocidad.push(Number(datos.velocidad) * 33);  // normaliza a escala 100
+            if (datos.precisión) precision.push(Number(datos.precisión) * 33);
+            if (datos.comprensión) comprension.push(Number(datos.comprensión) * 33);
+            if (datos.escritura) escritura.push(Number(datos.escritura) * 33);
+
         }
     });
 

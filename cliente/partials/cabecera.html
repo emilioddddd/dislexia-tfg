@@ -18,39 +18,53 @@
 <script>
   // Función que se ejecuta al cargar el contenido del DOM
   async function inicializarCabecera() {
+    let puedeAcceder = true;
+
     try {
       const res = await fetch('/api/usuarios/perfil', { credentials: 'include' });
       const data = await res.json();
 
-      // Si es profesional, mostrar botón de acceso al panel
       if (data.usuario?.rol === 'profesional') {
         document.getElementById('linkProfesional').style.display = 'inline-block';
       }
 
-      // Redirigir al hacer clic en el logo
-      document.querySelector('.logo')?.addEventListener('click', () => {
-        if (data.usuario?.rol === 'profesional') {
-          window.location.href = '/panel-profesional.html';
-        } else {
-          window.location.href = '/perfil.html';
+      if (data.usuario?.rol === 'paciente') {
+        const testRes = await fetch(`/api/resultados/progreso/${data.usuario.id}`);
+        const progreso = await testRes.json();
+        const sinProgreso = (
+          progreso.velocidad === 0 &&
+          progreso.precision === 0 &&
+          progreso.comprension === 0 &&
+          progreso.escritura === 0
+        );
+        console.log('Progreso del usuario:', data.usuario, progreso);
+
+        if (sinProgreso) {
+          puedeAcceder = false;
+          //alert("🔒 Completa el test inicial para acceder al resto de funcionalidades.");
+          window.location.href = '/test-inicial.html';
         }
+      }
+
+      // Botones de navegación (los bloqueamos si no puede acceder)
+      document.getElementById('btnPerfil')?.addEventListener('click', () => {
+        if (puedeAcceder) window.location.href = '/perfil.html';
       });
 
+      
+      document.getElementById('btnJuegos')?.addEventListener('click', () => {
+        
+          window.location.href = '/juegos.html';
+      });
 
-      // Resaltar botón activo según la página actual
-      const path = window.location.pathname;
-      if (path.includes('perfil.html')) {
-        document.getElementById('btnPerfil')?.classList.add('boton-activo');
-      } else if (path.includes('juegos.html')) {
-        document.getElementById('btnJuegos')?.classList.add('boton-activo');
-      } else if (path.includes('panel-profesional.html')) {
-        document.getElementById('btnPanel')?.classList.add('boton-activo');
-      }
+      document.getElementById('btnPanel')?.addEventListener('click', () => {
+        window.location.href = '/panel-profesional.html';
+      });
+
     } catch (err) {
       console.error('Error al cargar la cabecera:', err);
     }
 
-    // Evento para cerrar sesión
     document.getElementById('cerrarSesion')?.addEventListener('click', async () => {
       await fetch('/api/usuarios/logout', {
         method: 'POST',
@@ -59,6 +73,7 @@
       window.location.href = '/login.html';
     });
   }
+
 
   // Ejecutar cuando se inyecta en la página
   inicializarCabecera();
