@@ -107,3 +107,16 @@ button:hover {
     flex-direction: row;
   }
 }
+
+.logo-centro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-centro img {
+  height: 100px;
+  border-radius: 8px;
+}
+

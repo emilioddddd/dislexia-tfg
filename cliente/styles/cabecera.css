@@ -1,9 +1,33 @@
 .cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background-color: #35424a;
   padding: 10px 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+
+.logo {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s;
+}
+
+.logo img {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.nombre-sitio {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
 }
 
 .cabecera button {
@@ -27,3 +51,6 @@
   font-weight: bold;
 }
 
+.botones > * {
+  margin-left: 10px;
+}

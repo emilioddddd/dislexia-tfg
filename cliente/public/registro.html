@@ -1,149 +1,47 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>Registro de Usuario</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #f2f4f7;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .registro-container {
-      background-color: #ffffff;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
-      width: 100%;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #2c3e50;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
-      color: #34495e;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #3498db;
-      color: white;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    button:hover {
-      background-color: #2980b9;
-    }
-
-    .mensaje {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .mensaje.error {
-      color: #e74c3c;
-    }
-
-    .mensaje.exito {
-      color: #2ecc71;
-    }
-  </style>
+  <link rel="stylesheet" href="../styles/registro.css">
 </head>
+
 <body>
-  <div class="registro-container">
-    <h1>Registro</h1>
-    <form id="formRegistro">
-      <label for="email">Correo electrónico:</label>
-      <input type="email" id="email" name="email" required>
 
-      <label for="username">Nombre de usuario:</label>
-      <input type="text" id="username" name="username" required>
+  <body>
+    <div class="registro-container">
+      <div class="encabezado-logo">
+        <img src="../partials/img/dixlabSinNombre.jpg" alt="Logo Dixlab">
+        <h1>Registro</h1>
+      </div>
 
-      <label for="password">Contraseña:</label>
-      <input type="password" id="password" name="password" required>
+      <form id="formRegistro">
+        <label for="email">Correo electrónico:</label>
+        <input type="email" id="email" name="email" required>
 
-      <label for="rol">Rol:</label>
-      <select id="rol" name="rol">
-        <option value="paciente">Paciente</option>
-        <option value="profesional">Profesional</option>
-      </select>
+        <label for="username">Nombre de usuario:</label>
+        <input type="text" id="username" name="username" required>
 
-      <button type="submit">Registrarse</button>
-    </form>
-    <div id="mensaje" class="mensaje"></div>
-  </div>
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required>
 
-  <script>
-    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
-      e.preventDefault();
+        <label for="rol">Rol:</label>
+        <select id="rol" name="rol">
+          <option value="paciente">Paciente</option>
+          <option value="profesional">Profesional</option>
+        </select>
 
-      const email = document.getElementById('email').value.trim();
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      const rol = document.getElementById('rol').value;
+        <div class="botones-formulario">
+          <button type="submit" class="btn-verde">Registrarse</button>
+          <button type="button" class="btn-gris" onclick="window.location.href='/login.html'">Cancelar</button>
+        </div>
+      </form>
 
-      const mensaje = document.getElementById('mensaje');
-      mensaje.textContent = '';
-      mensaje.className = 'mensaje';
+      <div id="mensaje" class="mensaje"></div>
+    </div>
 
-      try {
-        const res = await fetch('/api/usuarios/registro', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, username, password, rol })
-        });
+  </body>
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          mensaje.textContent = data.mensaje || 'Error en el registro';
-          mensaje.classList.add('error');
-        } else {
-          mensaje.textContent = '✅ Registro exitoso. Redirigiendo al login...';
-          mensaje.classList.add('exito');
-          setTimeout(() => {
-            window.location.href = '/login.html';
-          }, 2000);
-        }
-      } catch (err) {
-        mensaje.textContent = 'Error al conectar con el servidor';
-        mensaje.classList.add('error');
-      }
-    });
-  </script>
-</body>
 </html>

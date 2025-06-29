@@ -1,13 +1,19 @@
 <div class="cabecera">
-  <a href="/perfil.html"><button id="btnPerfil">Perfil</button></a>
-  <a href="/juegos.html"><button id="btnJuegos">Juegos</button></a>
-  <a href="/panel-profesional.html" id="linkProfesional" style="display: none;">
-    <button id="btnPanel">Panel Profesional</button>
-  </a>
-  <button id="cerrarSesion">Cerrar sesión</button>
+  <div class="logo">
+    <img src="../partials/img/dixlab.jpg" alt="Dixlab Logo">
+  </div>
+  <div class="botones">
+    <a href="/perfil.html"><button id="btnPerfil">Perfil</button></a>
+    <a href="/juegos.html"><button id="btnJuegos">Juegos</button></a>
+    <a href="/panel-profesional.html" id="linkProfesional" style="display: none;">
+      <button id="btnPanel">Panel Profesional</button>
+    </a>
+    <button id="cerrarSesion">Cerrar sesión</button>
+  </div>
 </div>
 
 <link rel="stylesheet" href="/styles/cabecera.css" />
+
 
 <script>
   // Función que se ejecuta al cargar el contenido del DOM
@@ -20,6 +26,16 @@
       if (data.usuario?.rol === 'profesional') {
         document.getElementById('linkProfesional').style.display = 'inline-block';
       }
+
+      // Redirigir al hacer clic en el logo
+      document.querySelector('.logo')?.addEventListener('click', () => {
+        if (data.usuario?.rol === 'profesional') {
+          window.location.href = '/panel-profesional.html';
+        } else {
+          window.location.href = '/perfil.html';
+        }
+      });
+
 
       // Resaltar botón activo según la página actual
       const path = window.location.pathname;
