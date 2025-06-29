@@ -148,14 +148,29 @@
       tbody.innerHTML = '';
       listaPacientes.innerHTML = '';
 
-      const fechaFormateada = new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(fecha));
-      document.getElementById('fechaSeleccionada').textContent = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+      const fechaFormateada = new Intl.DateTimeFormat('es-ES', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      }).format(new Date(fecha));
+      document.getElementById('fechaSeleccionada').textContent =
+        fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
 
       const pacientesSet = new Set();
 
       data.horarios.forEach(h => {
         const fila = document.createElement('tr');
-        fila.innerHTML = `<td>${h.hora}</td><td>${h.paciente || '-'}</td><td></td>`;
+
+        // Obtener nombre del paciente de forma segura
+        let nombrePaciente = '-';
+        let pacienteId = null;
+
+        if (typeof h.paciente === 'object' && h.paciente !== null) {
+          nombrePaciente = h.paciente.nombre || 'Sin nombre';
+          pacienteId = h.paciente._id || null;
+        } else if (typeof h.paciente === 'string') {
+          nombrePaciente = 'Paciente';
+        }
+
+        fila.innerHTML = `<td>${h.hora}</td><td>${nombrePaciente}</td><td></td>`;
         const acciones = fila.querySelector('td:last-child');
 
         if (h._id) {
@@ -164,15 +179,16 @@
           btnE.onclick = () => abrirModalEditar(h);
           acciones.appendChild(btnE);
 
-
-        } else {
           const hoy = new Date().toISOString().split('T')[0];
           if (fechaGlobal >= hoy) {
             const btnD = document.createElement('button');
             btnD.textContent = 'Eliminar cita';
-            btnD.onclick = () => mostrarConfirmacionEliminar(h._id, h.paciente, h.hora);
+            btnD.onclick = () => mostrarConfirmacionEliminar(h._id, nombrePaciente, h.hora);
             acciones.appendChild(btnD);
-
+          }
+        } else {
+          const hoy = new Date().toISOString().split('T')[0];
+          if (fechaGlobal >= hoy) {
             const btnAdd = document.createElement('button');
             btnAdd.textContent = 'Añadir cita';
             btnAdd.onclick = () => abrirModal(h.hora);
@@ -180,27 +196,27 @@
           }
         }
 
-
         tbody.appendChild(fila);
-        //if (h.paciente) pacientesSet.add(h);
-        if (h.paciente && h._id) {
-          pacientesSet.add(JSON.stringify({ nombre: h.paciente, id: h._id }));
+
+        // Solo añadimos pacientes únicos con ID
+        if (pacienteId) {
+          pacientesSet.add(JSON.stringify({ nombre: nombrePaciente, id: pacienteId }));
         }
       });
 
       pacientesSet.forEach(pStr => {
-        console.log('Paciente:', pStr);
         const p = JSON.parse(pStr);
         const li = document.createElement('li');
-        li.textContent = p.nombre.nombre;
+        li.textContent = p.nombre;
         li.style.cursor = 'pointer';
         li.addEventListener('click', () => {
-          window.location.href = `/perfil.html?paciente=${p.nombre._id}`;
+          window.location.href = `/perfil.html?paciente=${p.id}`;
         });
         listaPacientes.appendChild(li);
       });
-
     }
+
+
 
     async function abrirModal(hora) {
       const hoy = new Date().toISOString().split('T')[0];

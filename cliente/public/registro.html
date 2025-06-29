@@ -42,6 +42,44 @@
       <div id="mensaje" class="mensaje"></div>
     </div>
 
+    <script>
+      document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const rol = document.getElementById('rol').value;
+
+        const mensaje = document.getElementById('mensaje');
+        mensaje.textContent = '';
+        mensaje.className = 'mensaje';
+
+        try {
+          const res = await fetch('/api/usuarios/registro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, username, password, rol })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            mensaje.textContent = data.mensaje || 'Error en el registro';
+            mensaje.classList.add('error');
+          } else {
+            mensaje.textContent = '✅ Registro exitoso. Redirigiendo al login...';
+            mensaje.classList.add('exito');
+            setTimeout(() => {
+              window.location.href = '/login.html';
+            }, 2000);
+          }
+        } catch (err) {
+          mensaje.textContent = 'Error al conectar con el servidor';
+          mensaje.classList.add('error');
+        }
+      });
+    </script>
   </body>
 
 </html>

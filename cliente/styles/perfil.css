@@ -20,7 +20,7 @@ h1, h2 {
 
 /* === Bloques principales === */
 main {
-  max-width: 1000px;
+  max-width: auto;
   margin: 0 auto;
   padding: 20px;
 }
@@ -32,6 +32,7 @@ main {
   margin-bottom: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   text-align: left;
+  width: 100%;
 }
 
 .bloque h2 {
@@ -48,9 +49,13 @@ main {
 /* === Gráfico === */
 .grafico-container {
   width: 100%;
+  max-width: 1200px;
   height: 300px;
-  margin-top: 10px;
+  margin: 10px auto; /* centra horizontalmente */
+  padding: 0 10px; /* opcional: margen lateral interno */
+  box-sizing: border-box;
 }
+
 
 /* === Lista de citas === */
 #listaCitas > div {
@@ -80,7 +85,7 @@ main {
 }
 
 /* === Responsive === */
-@media (max-width: 768px) {
+@media (max-width: auto) {
   .grafico-container {
     height: 250px;
   }
