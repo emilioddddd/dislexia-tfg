@@ -161,46 +161,46 @@
         }
 
         async function cargarCitasPaciente(id) {
-    try {
-        const endpoint = usuarioActual.rol === 'profesional'
-            ? `/api/citas/citas-paciente/${id}`
-            : '/api/citas/mis-citas-paciente';
+            try {
+                const endpoint = usuarioActual.rol === 'profesional'
+                    ? `/api/citas/citas-paciente/${id}`
+                    : '/api/citas/mis-citas-paciente';
 
-        const res = await fetch(endpoint, { credentials: 'include' });
-        const data = await res.json();
-        const lista = document.getElementById('listaCitas');
-        lista.innerHTML = '';
+                const res = await fetch(endpoint, { credentials: 'include' });
+                const data = await res.json();
+                const lista = document.getElementById('listaCitas');
+                lista.innerHTML = '';
 
-        if (!data.eventos || data.eventos.length === 0) {
-            lista.innerHTML = '<li>No hay citas registradas.</li>';
-            return;
-        }
+                if (!data.eventos || data.eventos.length === 0) {
+                    lista.innerHTML = '<li>No hay citas registradas.</li>';
+                    return;
+                }
 
-        data.eventos.forEach(evt => {
-            const div = document.createElement('div');
-            div.innerHTML = `
+                data.eventos.forEach(evt => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
                 <h3>${new Date(evt.start).toLocaleString()}</h3>
                 <table>
                     <thead><tr><th>Juego</th><th>¿Jugado?</th></tr></thead>
                     <tbody>
                         ${evt.juegos.map(j =>
-                            `<tr>
+                        `<tr>
                                 <td>
                                     ${j.ruta ? `<a href="${j.ruta}" target="_blank">${j.titulo}</a>` : j.titulo}
                                 </td>
                                 <td><input type="checkbox" disabled ${j.jugado ? 'checked' : ''}></td>
                             </tr>`
-                        ).join('')}
+                    ).join('')}
                     </tbody>
                 </table>`;
-            lista.appendChild(div);
-        });
+                    lista.appendChild(div);
+                });
 
-    } catch (err) {
-        console.error('Error al cargar citas:', err);
-        document.getElementById('bloqueCitas').style.display = 'none';
-    }
-}
+            } catch (err) {
+                console.error('Error al cargar citas:', err);
+                document.getElementById('bloqueCitas').style.display = 'none';
+            }
+        }
 
 
         async function cargarCitasProfesional() {
